@@ -118,8 +118,8 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
                     $query = "DELETE FROM documents WHERE id  =" . $id;
                     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
                     //delete course files
-                    $path = $_SERVER["DOCUMENT_ROOT"] . "/docs_extract_new/documentFiles/".$name;
-                   // xrmdir($path);
+                    $path = $_SERVER["DOCUMENT_ROOT"] . "/docs_extract_new/documentFiles/" . $name;
+                    // xrmdir($path);
 
                     $response = [
                         'response' => true,
@@ -360,32 +360,32 @@ ON DUPLICATE KEY UPDATE content=values(content)';
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($row = mysqli_fetch_assoc($result)) {
-        $data = [
-            'response' => true,
-            'title' => $row['doc_name'],
-            'details' => $row['details'],
-            'url' => $row['document_url'],
-            'local_id' => $row['local_course_id'],
-            'emp_id' => $row['emp_id'],
-            'date_time' => $row['date_time'],
-            'server' => $row['name'],
+            $data = [
+                'response' => true,
+                'title' => $row['doc_name'],
+                'details' => $row['details'],
+                'url' => $row['document_url'],
+                'local_id' => $row['local_course_id'],
+                'emp_id' => $row['emp_id'],
+                'date_time' => $row['date_time'],
+                'server' => $row['name'],
 
-        ];
-         }
+            ];
+        }
         echo json_encode($data);
 
         break;
 
 
-
 }
-function xrmdir($dir) {
+function xrmdir($dir)
+{
     $items = scandir($dir);
     foreach ($items as $item) {
         if ($item === '.' || $item === '..') {
             continue;
         }
-        $path = $dir.'/'.$item;
+        $path = $dir . '/' . $item;
         if (is_dir($path)) {
             xrmdir($path);
         } else {
