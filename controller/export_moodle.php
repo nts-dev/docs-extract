@@ -11,12 +11,7 @@ define('CHECK_BOXES', 6);
 define('DELETE_MODULES', 13);
 define('ADD_MODULES', 14);
 
-$dbc = mysqli_connect('localhost', 'projectuser', 'wgnd8b', 'nts_site');
-
-if (mysqli_connect_errno()) {
-    echo 'Could not connect to MySQL: ' . mysqli_connect_error();
-	exit();
-}
+include_once 'config.php';
 
 
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);

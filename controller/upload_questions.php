@@ -459,7 +459,7 @@ function insertAnswer($question_id, $obj = null) {
 
 
     if (count($answers) > 0) {
-        $query_insert_toc = "INSERT INTO nts_site.project_course_choices (question_id,text,score,response) VALUES " . implode(",", $answers);
+        $query_insert_toc = "INSERT INTO project_course_choices (question_id,text,score,response) VALUES " . implode(",", $answers);
 
         mysqli_query($dbc, $query_insert_toc) or die(mysqli_error($dbc));
     }
@@ -473,7 +473,7 @@ function addQuestions($id, $chapter_nums, $chapter, $contentPerChapter, $qtype) 
     $chapterText = $chapter_nums . $chapter;
     $title = explode("(", $chapterText)[0];
 
-    $select = "SELECT * FROM nts_site.project_course_question WHERE course_id = $id AND title='" . $title . "'";
+    $select = "SELECT * FROM project_course_question WHERE course_id = $id AND title='" . $title . "'";
     $result = mysqli_query($dbc, $select) or die(mysqli_error($dbc));
     $numRows = mysqli_num_rows($result);
     if ($numRows > 0) {
@@ -482,7 +482,7 @@ function addQuestions($id, $chapter_nums, $chapter, $contentPerChapter, $qtype) 
         return $row['id'];
     }
 
-    $query_insert_toc = "INSERT INTO nts_site.project_course_question (course_id,title,text,type)
+    $query_insert_toc = "INSERT INTO project_course_question (course_id,title,text,type)
 VALUES (" . $id . ",'" . $title . "','" . mysqli_real_escape_string($dbc, $contentPerChapter) . "'," . $qtype . ")";
 
     $insertResult = mysqli_query($dbc, $query_insert_toc) or die(mysqli_error($dbc));
@@ -496,7 +496,7 @@ VALUES (" . $id . ",'" . $title . "','" . mysqli_real_escape_string($dbc, $conte
 
         if ($pageId) {
 
-            $insertPage = "INSERT INTO nts_site.project_course_question_to_page (`question_id`,`page_id`, `sort_id`) SELECT " . $question_id . "," . $pageId . ",IF((MAX(sort_id)>0),MAX(sort_id)+1,1)sort_id FROM nts_site.project_course_question_to_page WHERE page_id = " . $pageId;
+            $insertPage = "INSERT INTO project_course_question_to_page (`question_id`,`page_id`, `sort_id`) SELECT " . $question_id . "," . $pageId . ",IF((MAX(sort_id)>0),MAX(sort_id)+1,1)sort_id FROM project_course_question_to_page WHERE page_id = " . $pageId;
 
             mysqli_query($dbc, $insertPage) or die(mysqli_error($dbc));
         }
