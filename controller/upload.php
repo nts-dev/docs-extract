@@ -2,6 +2,7 @@
 
 ini_set('display_errors', '1');
 header("Access-Control-Allow-Origin: *");
+ini_set('max_execution_time', 1000);
 include 'config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
@@ -198,6 +199,8 @@ function getClient()
         $client->addScope(Google_Service_Drive::DRIVE);
         $client->addScope(Google_Service_Drive::DRIVE_FILE);
         $client->addScope(Google_Service_Drive::DRIVE_READONLY);
+        $client->setConfig('CURLOPT_CONNECTTIMEOUT', 100);
+        $client->setConfig('CURLOPT_TIMEOUT', 1000);
     } catch (Exception  $e) {
 
         $response = $e->getCode();
@@ -965,7 +968,7 @@ function checkSection($id, $chapter)
     }
     $obj = ['id' => $id,];
     $curl = new curl;
-    $serverurl = "https://bo.nts.nl/Google_docs_extract/controller/documents.php?action=5";
+    $serverurl = $_SERVER["DOCUMENT_ROOT"] . "/docs-extract/controller/documents.php?action=5";
 
 
     $resp = $curl->get($serverurl, $obj);
