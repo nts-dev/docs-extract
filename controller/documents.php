@@ -118,8 +118,9 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
                     $query = "DELETE FROM documents WHERE id  =" . $id;
                     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
                     //delete course files
-                    $path = $_SERVER["DOCUMENT_ROOT"] . "/docs_extract_new/documentFiles/" . $name;
-                    // xrmdir($path);
+                    $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $name;
+                    if (file_exists($path))
+                        xrmdir($path);
 
                     $response = [
                         'response' => true,
@@ -380,6 +381,7 @@ ON DUPLICATE KEY UPDATE content=values(content)';
 }
 function xrmdir($dir)
 {
+
     $items = scandir($dir);
     foreach ($items as $item) {
         if ($item === '.' || $item === '..') {

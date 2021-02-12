@@ -165,7 +165,7 @@ function onGrid1RowSelect(id, ind) {
     $.get(baseURL + "controller/documents.php?action=14&id=" + id, function (data) {
         doc_name = data.title;
         doc_url = data.url;
-        description=data.details;
+        description = data.details;
         course_form.setItemValue("title", data.title);
         course_form.setItemValue("details", description);
         course_form.setItemValue("url", doc_url);
@@ -188,42 +188,35 @@ function onGrid1RowSelect(id, ind) {
 function openUploadWindow(reimport, doc_id) {
 
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myWidth * 0.0555, myWidth * 0.333, myWidth * 0.28)
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
     window_4.setText('Import Document');
     window_4.setModal(1);
-    //window_4.centerOnScreen();
     window_4.button('park').hide();
     window_4.button('minmax').hide();
 
     var formData = [
-
         {
             type: "fieldset",
             label: "Enter document link",
             iconset: "awesome",
+            width: myWidth * 0.27,
             list: [{
                 type: "input",
                 name: "url",
-                inputWidth: myWidth * 0.277, required: true,
+                inputWidth: myWidth * 0.24, required: true,
                 preMessage: "Enter your google document url here"
             },
-                // {
-                //     type: "button",
-                //     name: "btn",
-                //     value: "Import",
-                //     img: "fa fa-download", imgdis: "fa fa-download"
-                // }
             ]
         },
         {
             type: "fieldset",
-            label: "Upload Google Document as zip",
+            label: "Drag And Drop Google Document zip file here",
             iconset: "awesome",
+            width: myWidth * 0.27,
             list: [{
                 type: "upload",
                 name: "myFiles",
-                inputWidth: myWidth * 0.277,
-                url: baseURL + "controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id,
+                inputWidth: myWidth * 0.2,
                 autoStart: true,
                 swfPath: baseURL + "controller/uploader.swf",
                 swfUrl: baseURL + "controller/upload.php",
@@ -234,6 +227,7 @@ function openUploadWindow(reimport, doc_id) {
             type: "fieldset",
             label: "Description ",
             labelInline: true,
+            width: myWidth * 0.27,
             list: [
                 {
                     type: "input", name: "details", label: "Course Details", value: "", inputWidth: myWidth * 0.2,
@@ -246,6 +240,7 @@ function openUploadWindow(reimport, doc_id) {
             type: "fieldset",
             label: "Select Export Server ",
             labelInline: true,
+            width: myWidth * 0.27,
             list: [
                 {
                     type: "combo",
@@ -256,27 +251,23 @@ function openUploadWindow(reimport, doc_id) {
                 },
             ]
         },
-
         {
-            type: "label", labelWidth: myWidth * 0.21, list: [
+            type: "label", labelWidth: myWidth * 0.27, list: [
                 {
-                    type: "label", labelWidth: myWidth * 0.2
+                    type: "label", labelWidth: myWidth * 0.15
                 },
                 {type: "newcolumn"},
-                {type: "button", name: "cancel", value: "Cancel"},
+                {type: "button", name: "import", value: "Import", icon: "fa fa-download", imgdis: "fa fa-download"},
                 {type: "newcolumn"},
-
-                {type: "button", name: "import", value: "Import", img: "fa fa-download", imgdis: "fa fa-download"},
+                {type: "button", name: "cancel", value: "Cancel"},
             ]
         },
     ];
 
     var form_2 = window_4.attachForm(formData);
     var combo_server = form_2.getCombo("server");
-
-
     window_4.progressOn();
-    if(reimport) {
+    if (reimport) {
         $.get(baseURL + "controller/documents.php?action=14&id=" + doc_id, function (data) {
 
             form_2.setItemValue("url", data.url);
@@ -286,12 +277,20 @@ function openUploadWindow(reimport, doc_id) {
     }
     course_form
     combo_server.load(baseURL + "controller/chapters.php?action=14&id=" + doc_id, function () {
-
+        server_id = combo_server.getSelectedValue();
         window_4.progressOff();
+        if(!server_id){
+            dhtmlx.alert({
+                title: 'Error',
+                expire: 2000,
+                text: "Please add Moodle server to proceed!"
+            });
+        }
+        var myUploader = form_2.getUploader("myFiles");
+        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id+"&server="+server_id);
     });
 
     form_2.attachEvent("onUploadComplete", function (count) {
-
         dhtmlx.message({
             title: 'Success',
             expire: 2000,
@@ -314,29 +313,18 @@ function openUploadWindow(reimport, doc_id) {
         });
     });
 
-    // if (reimport > 0) {
-    //     form_2.setItemValue("url", grid_1.cells(doc_id, 3).getValue());
-    // }
-
     form_2.attachEvent("onButtonClick", function (id) {
-
-
             if (id == "import") {
-
                 var url = form_2.getItemValue('url');
                 var details = form_2.getItemValue('details');
-                var server = combo_server.getSelectedValue();
-
                 if (url != "") {
-
                     let postdata = {
                         reimport: reimport,
                         doc_id: doc_id,
                         url: url,
                         details: details,
-                        server: server
+                        server: server_id
                     };
-
                     window_4.progressOn();
                     $.post(baseURL + "controller/upload.php?action=2", postdata, function (data) {
                         if (data.response) {
@@ -346,16 +334,10 @@ function openUploadWindow(reimport, doc_id) {
                             tab_2.detachObject(true);
 
                             if (reimport > 0) {
-                                updateServer(doc_id, server);
-                                // grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id);
-                                // grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id);
+
                             } else {
-                                addServer(server);
-
-                                // grid_2.clearAndLoad(baseURL + 'controller/chapters.php?action=1&id=' + doc_id);
-                                // grid_archive.clearAndLoad(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id);
+                                addServer(server_id);
                             }
-
                             grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
                             tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
                             tab_2.detachObject(true);
@@ -365,13 +347,7 @@ function openUploadWindow(reimport, doc_id) {
 
                             grid_2.expandAll();
                             grid_archive.expandAll();
-
-                            dhtmlx.message({
-                                title: 'Success',
-                                expire: 2000,
-                                text: data.text
-                            });
-
+                            dhtmlx.message({title: 'Success',expire: 2000,text: data.text});
                             window_4.progressOff();
                             window_4.close();
                         } else {
@@ -520,8 +496,6 @@ function documentRestore(course_id, doc_name, window_6) {
                     text: "Process cancelled"
                 });
             }
-
-
         }
     });
 }
@@ -532,53 +506,47 @@ function exportToMoodle(doc_id) {
         id: doc_id,
         update: false,
         url: doc_url,
-        details:description,
+        details: description,
 
     };
-    $.post(baseURL + "controller/export_moodle.php?action=1",postdata, function (data) {
+    $.post(baseURL + "controller/export_moodle.php?action=1", postdata, function (data) {
         main_layout.progressOff();
-		//if(!data.connect){
-		//	dhtmlx.message({
-         //   title: 'Success',
-         //    expire: 5000,
-         //     text: data.text
-    //});
-			
-		//}
 
-        if (data.response) {
+        for (var item in data) {
 
-            if (data.hasCourseid) {
-                documentExists(data.course_id, doc_id, data.course_name);
+            if (data[item].response) {
+
+                if (data[item].hasCourseid) {
+                    documentExists(data[item].course_id, doc_id, data[item].course_name);
+                } else {
+                    dhtmlx.message({title: 'Success', expire: 3000, text: data[item].text});
+
+                    if(data[item].course_id) {
+                        addingCourse(doc_id, data[item].course_id)
+                    }
+                }
             } else {
-                addingCourse(doc_id, data.course_id, data.id, data.text);
+                dhtmlx.alert({title: 'Error!', text: data[item].text});
             }
-        } else {
-            dhtmlx.alert({
-                title: 'Warning',
-                text: data.text
-            });
         }
+
     }, "json");
 }
 
-function addingCourse(doc_id, course_id, id, text) {
 
-    dhtmlx.message({
-        title: 'Success',
-        expire: 5000,
-        text: text
-    });
+function addingCourse(doc_id, course_id) {
 
     main_layout.progressOn();
-    $.get(baseURL + "controller/export_moodle.php?action=2&course_id=" + course_id + "&id=" + id, function (data) {
+    $.get(baseURL + "controller/export_moodle.php?action=2&course_id=" + course_id + "&id=" + doc_id, function (data) {
         main_layout.progressOff();
-
-        dhtmlx.message({
-            title: 'Success',
-            expire: 3000,
-            text: data.text
-        });
+        for (var item in data) {
+            if(data[item].response){
+                dhtmlx.message({title: 'Success',expire: 6000,text: data[item].text});
+            }
+            else {
+                dhtmlx.alert({title: 'Error!', text: data[item].text});
+            }
+        }
         grid_2.clearAndLoad(baseURL + 'controller/chapters.php?action=1&id=' + doc_id);
         grid_archive.clearAndLoad(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id);
 

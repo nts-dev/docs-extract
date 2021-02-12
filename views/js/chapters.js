@@ -91,7 +91,7 @@ function onToolbar2Click(id) {
             main_layout.progressOff();
 
             if (data.response) {
-                updateModules(doc_id);
+                updateModules();
             } else {
                 dhtmlx.alert({
                     title: 'Warning',
@@ -157,7 +157,7 @@ function onGrid2RowSelect(id, ind) {
 }
 
 
-function updateModules(doc_id) {
+function updateModules() {
 
 
 //get checked rows for new vwersion
@@ -183,56 +183,30 @@ function updateModules(doc_id) {
         });
         return;
     }
-    if (archived_checked_arr != '' && checked != '') {
 
-        insertDeleteChapters(archived_checked_arr, doc_id, checked);
+    insertDeleteChapters(archived_checked_arr, checked);
 
-        return;
-    }
-
-    if (checked) {
-
-        insertCurrentVersion(checked, doc_id);
-
-        return;
-    }
-    if (archived_checked_arr) {
-
-        deleteArchive(archived_checked_arr, doc_id);
-        return;
-    }
-
-
-    return false;
 }
 
-function insertDeleteChapters(archived_checked_arr, doc_id, checked) {
-
-
+function insertDeleteChapters(archived_checked_arr, checked) {
     main_layout.progressOn();
-    $.get(baseURL + "controller/export_moodle.php?action=13&doc_id=" + doc_id + "&ids=" + archived_checked_arr, function (data) {
-
+    $.get(baseURL + "controller/export_moodle.php?action=14&doc_id=" + doc_id + "&ids=" + checked +"&dids="+ archived_checked_arr, function (data) {
         main_layout.progressOff();
-        dhtmlx.message({
-            title: 'Success',
-            expire: 3000,
-            text: data.text
-        })
 
-    }, "json")
-
-    main_layout.progressOn();
-    $.get(baseURL + "controller/export_moodle.php?action=14&doc_id=" + doc_id + "&id=" + checked, function (data) {
-        main_layout.progressOff();
-        dhtmlx.message({
-            title: 'Success',
-            expire: 3000,
-            text: data.text
-        })
+        for (var item in data) {
+            if(data[item].response){
+                dhtmlx.message({title: 'Success',expire: 6000,text: data[item].text});
+            }
+            else {
+                dhtmlx.alert({title: 'Error',expire: 6000,text: data[item].text});
+                return;
+            }
+        }
         grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id, true, true);
         grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id, true, true);
-        main_layout.progressOff();
+
     }, "json")
+
 
 
 }
@@ -243,15 +217,39 @@ function insertCurrentVersion(checked, doc_id) {
     $.get(baseURL + "controller/export_moodle.php?action=14&doc_id=" + doc_id + "&id=" + checked, function (data) {
 
         main_layout.progressOff();
-        dhtmlx.message({
-            title: 'Success',
-            expire: 3000,
-            text: data.text
-        });
+        for (var item in data) {
+
+            if(data[item].response){
+                dhtmlx.message({title: 'Success',expire: 3000,text: data[item].text});
+            }
+            else {
+                dhtmlx.message({title: 'Success',expire: 3000,text: data[item].text});
+            }
+        }
         grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id, true, true);
         grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id, true, true);
 
     }, "json")
+
+}
+
+function deleteArchive(archived_checked_arr, doc_id) {
+
+    main_layout.progressOn();
+    $.get("controller/export_moodle.php?action=13&doc_id=" + doc_id + "&ids=" + archived_checked_arr, function (data) {
+
+        for (var item in data) {
+            if(data[item].response){
+                dhtmlx.message({title: 'Success',expire: 3000,text: data[item].text});
+            }
+            else {
+                dhtmlx.message({title: 'Success',expire: 3000,text: data[item].text});
+            }
+        }
+        grid_2.updateFromXML('controller/chapters.php?action=1&id=' + doc_id, true, true);
+        grid_archive.updateFromXML('controller/achived_chapters.php?action=1&id=' + doc_id, true, true);
+    }, "json")
+
 
 }
 

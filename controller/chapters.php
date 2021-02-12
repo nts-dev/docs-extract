@@ -448,12 +448,19 @@ switch ($action) {
         echo '<?xml version="1.0" ?>';
 
         echo '<complete>';
+        $count = 0;
         while ($row = mysqli_fetch_assoc($result)) {
-            if( $row["id"] == 3) {
+            if( $row["name"] == "education.nts.nl") {
                 echo '<option value="'.$row["id"].'" selected ="1" ><![CDATA['.$row["name"].']]></option>';
             }
             else {
-                echo '<option value="' . $row["id"] . '" ><![CDATA[' . $row["name"] . ']]></option>';
+                if($count === 0) {
+                    echo '<option value="' . $row["id"] . '" selected ="1" ><![CDATA[' . $row["name"] . ']]></option>';
+                }
+                else {
+                    echo '<option value="' . $row["id"] . '"  ><![CDATA[' . $row["name"] . ']]></option>';
+                }
+               $count++;
             }
         }
         echo '</complete>';

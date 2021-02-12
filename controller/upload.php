@@ -5,11 +5,9 @@ header("Access-Control-Allow-Origin: *");
 include 'config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
-
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
-
-
+libxml_use_internal_errors(true);
 $headings = array();
 $upperCss = "";
 $lowerCss = "";
@@ -29,151 +27,164 @@ $counter_l3 = 0;
 $counter_l4 = 0;
 $qid = '';
 $url = '';
-$server = 2;
+$server = 0;
 $qid1 = 0;
 $qsort = 0;
 $checkSections = 0;
-$details='';
+$details = '';
 $contentPerChapter = '';
+$strContent='';
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
 
 switch ($action) {
 
     case IMPORTZIP:
-        $reimport = filter_input(INPUT_GET, 'reimport');
-        $doc_id = filter_input(INPUT_GET, 'doc_id');
+        try {
+            $reimport = filter_input(INPUT_GET, 'reimport');
+            $doc_id = filter_input(INPUT_GET, 'doc_id');
+            $server = filter_input(INPUT_GET, 'server', FILTER_SANITIZE_NUMBER_INT);
 
-        if ($_FILES["file"]["name"]) {
-            $filename = $_FILES["file"]["name"];
-            $source = $_FILES["file"]["tmp_name"];
-            $type = $_FILES["file"]["type"];
+            if ($_FILES["file"]["name"]) {
+                $filename = $_FILES["file"]["name"];
+                $source = $_FILES["file"]["tmp_name"];
+                $type = $_FILES["file"]["type"];
 
-            $name = explode(".", $filename);
-            $docName = $name[0];
+                $name = explode(".", $filename);
+                $docName = $name[0];
 
-            $accepted_types = array('application/zip', 'application/x-zip-compressed',
-                'multipart/x-zip', 'application/x-compressed');
-            foreach ($accepted_types as $mime_type) {
-                if ($mime_type == $type) {
-                    $okay = true;
-                    break;
+                $accepted_types = array('application/zip', 'application/x-zip-compressed',
+                    'multipart/x-zip', 'application/x-compressed');
+                foreach ($accepted_types as $mime_type) {
+                    if ($mime_type == $type) {
+                        $okay = true;
+                        break;
+                    }
+                }
+
+                $continue = strtolower($name[1]) == 'zip' ? true : false;
+                if (!$continue) {
+                    $myMsg = "Please upload a valid .zip file.";
+                }
+
+                /* PHP current path */
+                $path_html = dirname(__FILE__) . '/';
+                $filenoext = basename($filename, '.zip');
+                $filenoext = basename($filenoext, '.ZIP');
+                // $path = str_replace("Google_docs_extract\controller", "googleDocMedia", $path_html);
+
+                $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/";
+
+                if (!file_exists($path)) {
+                    if (!mkdir($path, 0774, true) && !is_dir($path)) {
+                        throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+                    }
+                }
+                $myDir = $path . $filenoext; // target directory
+                $myFile = $path . $filename; // target zip file
+
+                if (move_uploaded_file($source, $myFile)) {
+                    $zip = new ZipArchive();
+
+                    $x = $zip->open($myFile); // open the zip file to extract
+                    if ($x === true) {
+                        $zip->extractTo($myDir); // place in the directory with same name
+
+                        readGoogleDocHtml($myDir, $filenoext, true);
+
+                        $zip->close();
+                        unlink($myFile);
+
+
+                    }
+                    $myMsg = "Your .zip file uploaded and unziped.";
+                    $updateMsg = "Course Updated.";
+
+                    print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
+
+                } else {
+                    $myMsg = "There was a problem with the upload.";
+                    header("Content-Type: text/json");
+                    print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
+                }
+
+                if ($reimport == 1) {
+
+                    deleteNonUpdate();
+                    bDelete();
+                    bChanged();
+                    bInsert();
+
+
+                    bUpdate();
+
+
                 }
             }
-
-            $continue = strtolower($name[1]) == 'zip' ? true : false;
-            if (!$continue) {
-                $myMsg = "Please upload a valid .zip file.";
-            }
-
-            /* PHP current path */
-            $path_html = dirname(__FILE__) . '/';
-            $filenoext = basename($filename, '.zip');
-            $filenoext = basename($filenoext, '.ZIP');
-            $path = str_replace("Google_docs_extract\controller", "googleDocMedia", $path_html);
-            $myDir = $path . $filenoext; // target directory
-            $myFile = $path . $filename; // target zip file
-
-            if (move_uploaded_file($source, $myFile)) {
-                $zip = new ZipArchive();
-
-                $x = $zip->open($myFile); // open the zip file to extract
-                if ($x === true) {
-                    $zip->extractTo($myDir); // place in the directory with same name
-
-                    readGoogleDocHtml($myDir, $filenoext, true);
-
-                    $zip->close();
-                    unlink($myFile);
-
-
-                }
-                $myMsg = "Your .zip file uploaded and unziped.";
-                $updateMsg = "Course Updated.";
-
-                print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
-
-            } else {
-                $myMsg = "There was a problem with the upload.";
-                header("Content-Type: text/json");
-                print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
-            }
-
-            if ($reimport == 1) {
-
-                deleteNonUpdate();
-                bDelete();
-                bChanged();
-                bInsert();
-
-
-                bUpdate();
-
-
-            }
+        }
+        catch (Exception $e){
+            echo json_encode(array('response' => false, 'text' =>$e ));
         }
 
         break;
 
     case IMPORTURL:
 
+        try {
+            $reimport = filter_input(INPUT_POST, 'reimport');
+            $doc_id = filter_input(INPUT_POST, 'doc_id');
+            $fileId = filter_input(INPUT_POST, 'url');
+            $details = filter_input(INPUT_POST, 'details');
 
-        $reimport = filter_input(INPUT_POST, 'reimport');
-        $doc_id = filter_input(INPUT_POST, 'doc_id');
-        $fileId = filter_input(INPUT_POST, 'url');
-        $details = filter_input(INPUT_POST, 'details');
+            $server = filter_input(INPUT_POST, 'server', FILTER_SANITIZE_NUMBER_INT);
+            $url = $fileId;
+            $fileId = explode("d/", $fileId);
 
-        $server = filter_input(INPUT_POST, 'server', FILTER_SANITIZE_NUMBER_INT);
-        $url = $fileId;
-        $fileId = explode("d/", $fileId);
+            if (strpos($fileId[0], 'docs.google.com/document') === false) {
 
-        if (strpos($fileId[0], 'docs.google.com/document') === false) {
-
-            echo json_encode(array('response' => false, 'text' => 'Enter a valid document url/link and try again!'));
-            break;
-        }
-
-
-        $fileId = $fileId[1];
+                echo json_encode(array('response' => false, 'text' => 'Enter a valid document url/link and try again!'));
+                break;
+            }
 
 
-        $fileId = explode("/", $fileId);
-        $fileId = $fileId[0];
-    try{
-        $client = getClient();
-
-        $docName = getDocumentName($client, $fileId);
-
-        if ($docName != "")
-            $content = getContent($client, $fileId);
-
-        if ($content) {
+            $fileId = $fileId[1];
 
 
-            $check = readGoogleDocUrl($content);
+            $fileId = explode("/", $fileId);
+            $fileId = $fileId[0];
 
-            if (!$checkSections)
-                echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
+            $client = getClient();
 
-            if ($reimport == 1) {
+            $docName = getDocumentName($client, $fileId);
+
+            if ($docName != "")
+                $content = getContent($client, $fileId);
+
+            if ($content) {
 
 
-                if (deleteNonUpdate())
-                    if (bChanged())
-                        if (bInsert())
-                            if (bUpdate())
-                                bDelete();
+                $check = readGoogleDocUrl($content);
 
+                if (!$checkSections)
+                    echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
+
+                if ($reimport == 1) {
+
+
+                    if (deleteNonUpdate())
+                        if (bChanged())
+                            if (bInsert())
+                                if (bUpdate())
+                                    bDelete();
+
+
+                }
 
             }
 
         }
-	}
-	catch(Exception $e){
-		
-		echo json_encode(array('response' => false,  'text' => 'Could Not Connect to Google!  '));
-	}
-
-
+        catch (Exception $e){
+            echo json_encode(array('response' => false, 'text' =>$e ));
+        }
         break;
     default:
         break;
@@ -292,7 +303,7 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
     $mp4 = '';
     $mp3 = '';
     $youtube = '';
-    $dhtmxFormat='video.nts.nl/play/?id=';
+    $dhtmxFormat = '';
     if ($isUser) {
         $mp4 = '001';
         $mp3 = '003';
@@ -303,6 +314,7 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
         $mp3 = '.mp3';
         $youtube = 'watch?v=';
         $youtube1 = 'youtu.be';
+        $dhtmxFormat = 'video.nts.nl/play/?id=';
     }
     $startDelimiterLength = strlen($startDelimiter);
     $endDelimiterLength = strlen($endDelimiter);
@@ -316,7 +328,7 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
         }
         $replace = $startDelimiter . substr($str, $contentStart, $contentEnd - $contentStart) . $endDelimiter;
 
-        $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser,$dhtmxFormat);
+        $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat);
 
         $startFrom = $contentEnd + $endDelimiterLength;
     }
@@ -324,7 +336,8 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
 
     return $str;
 }
-function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser,$dhtmxFormat)
+
+function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat)
 {
     $mp4Delimiter = '';
     $mp3Delimiter = '';
@@ -333,28 +346,21 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser,$dhtmxFormat
         $mp4Delimiter = '<%001';
         $mp3Delimiter = '<%003';
         $youtubeDelimiter = '<%002';
-    }
-    if (strpos($replace, $dhtmxFormat) !== false) {
+    } else if (strpos(strip_tags($replace), $dhtmxFormat) !== false) {
 
         $replacement = "<iframe src='" . strip_tags($replace) . "' width='500' height='300' frameborder='1'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace( $replace, $replacement, $str);
+        $str = str_replace($replace, $replacement, $str);
 
-    }
-    else if (preg_match('/' . $mp4 . '/', strip_tags($replace)) ) {
+    } else if (preg_match('/' . $mp4 . '/', strip_tags($replace))) {
 
         $replacement = "<video controls='true'><source src='" . strip_tags($replace) . "'></video> </span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace( $replace, $replacement, $str);
-    }
-
-
-
-    else if (preg_match('/' . $mp3 . '/', strip_tags($replace))) {
+        $str = str_replace($replace, $replacement, $str);
+    } else if (preg_match('/' . $mp3 . '/', strip_tags($replace))) {
 
         $replacement = "<audio controls='true'><source src='" . strip_tags($replace) . "'></audio></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace( $replace, $replacement, $str);
+        $str = str_replace($replace, $replacement, $str);
 
-    }
-    else if (strpos($replace, $youtube) !== false) {
+    } else if (strpos($replace, $youtube) !== false) {
 
         $embededVideo = str_replace("www.youtube.com/watch?v=", "www.youtube-nocookie.com/embed/", strip_tags($replace));
 
@@ -364,8 +370,7 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser,$dhtmxFormat
         $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
         $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
 
-    }
-   else  if (strpos($replace, 'youtu.be') !== false) {
+    } else if (strpos($replace, 'youtu.be') !== false) {
 
         $embededVideo = str_replace("youtu.be", "www.youtube-nocookie.com/embed", strip_tags($replace));
 
@@ -384,22 +389,18 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser,$dhtmxFormat
 function readGoogleDocUrl($content)
 {
     $contentsWithVideoAudio = '';
-
+           global $docName,$strContent;
     if (strpos($content, '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
-
         $startDelimiter = '&lt;%';
         $endDelimiter = '%&gt;';
         $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, true);
-
     }
-     if(strpos($content, '<a') !== false && strpos($content, '/a>') !== false){
-
+    if (strpos($content, '<a') !== false && strpos($content, '/a>') !== false) {
         // setting delimiters for links
         $startDelimiter = '<a';
         $endDelimiter = '/a>';
         $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, false);
     }
-
     //remove opening user delimiters
     $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
@@ -410,26 +411,82 @@ function readGoogleDocUrl($content)
     $contentsWithVideoAudio = str_replace("&lt;iframe", "<iframe", $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("/iframe&gt;", "/iframe>", $contentsWithVideoAudio);
 
-
-    return readUrlHeaders($contentsWithVideoAudio);
-
+    $imagesArray = getImages($contentsWithVideoAudio);
+    $strContent = $contentsWithVideoAudio;
+    loopImagesdownload($imagesArray, $docName);
 }
 
+function loopImagesdownload($imagesArray, $docName)
+{
+global $strContent,$reimport;
+    $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/";
+
+    if (!file_exists($path)) {
+        if (!mkdir($path, 0774,true) && !is_dir($path)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+        }
+    }
+    $docFolder = $path . $docName."/images";
+    if($reimport) {
+        if (file_exists($docFolder)) {
+            xrmdir($docFolder);
+        }
+    }
+    if (!file_exists($docFolder)) {
+        if (!mkdir($docFolder, 0774,true) && !is_dir($docFolder)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $docFolder));
+        }
+    }
+    $imageCounter = 0;
+    foreach ($imagesArray as $image) {
+      downloadImages($image, $docFolder, $imageCounter++);
+    }
+    readUrlHeaders($strContent);
+}
+function getImages($content)
+{
+    $doc = new DOMDocument();
+    $doc->loadHTML($content);
+    $imgElements = $doc->getElementsByTagName('img');
+    $images = array();
+    for ($i = 0; $i < $imgElements->length; $i++) {
+        $images[] = $imgElements->item($i)->getAttribute('src');
+    }
+    return $images;
+}
+
+function downloadImages($url, $docFolder, $imageCounter)
+{
+    global $strContent,$docName;
+    $content = file_get_contents($url);
+    $fp = fopen($docFolder ."/image" . $imageCounter . ".png", "w");
+    fwrite($fp, $content);
+    fclose($fp);
+    $strContent = str_replace($url, "http://" . $_SERVER["HTTP_HOST"] . "/CourseFiles/documentFiles/" .$docName ."/images/image" . $imageCounter . ".png", $strContent);
+}
+function xrmdir($dir) {
+    $items = scandir($dir);
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+        $path = $dir.'/'.$item;
+        if (is_dir($path)) {
+            xrmdir($path);
+        } else {
+            unlink($path);
+        }
+    }
+    rmdir($dir);
+}
 function readGoogleDocHtml($path, $docFolder, $check)
 {
     $contentsWithVideoAudio = '';
     $files = glob($path . '/*html');
 
     if ($files) {
-
         $contents = file_get_contents($files[0]);
-//        $contents = str_replace("</head>", '  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=AM_CHTML"></script>
-//
-//            </head>', $contents);
-
-        $content = str_replace("images/image", $_SERVER["DOCUMENT_ROOT"] . "/" . $docFolder . "/images/image", $contents);
-
-
+        $content = str_replace("images/image", "http://" . $_SERVER["HTTP_HOST"] . "/CourseFiles/documentFiles/" . $docFolder . "/images/image", $contents);
         //check if string contains user delimiters ie
         if (strpos($content, '<%') !== false && strpos($content, '%>') !== false) {
 
@@ -863,7 +920,7 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
                 $qid1 = $parent_id2;
 
 
-            } else  {
+            } else {
 
                 $counter_l4++;
                 $query_insert_toc = "INSERT INTO toc (doc_id,sort_id,doc_name, date_time, chapter_id, chapter, parent_id,content,type,charVal,level_id,uppercss,lowercss,section_id,toUpdate) 
@@ -876,19 +933,19 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
 
         }
     }
-        if (strpos($key, '</h5>') !== false && $reimport == 0) {
+    if (strpos($key, '</h5>') !== false && $reimport == 0) {
 
-            if ($parent_id2)
-                $qid = checkQuestion($chapter, ++$qsort, $chapter_nums, $contentPerChapter, $qid1);
+        if ($parent_id2)
+            $qid = checkQuestion($chapter, ++$qsort, $chapter_nums, $contentPerChapter, $qid1);
 
-        } else if (strpos($key, '</h6>') !== false && $reimport == 0) {
+    } else if (strpos($key, '</h6>') !== false && $reimport == 0) {
 
-            if ($qid)
-                checkResponse($contentPerChapter, $qid, $qid1);
+        if ($qid)
+            checkResponse($contentPerChapter, $qid, $qid1);
 
-        }
+    }
 
-        return $result;
+    return $result;
 
 }
 
@@ -974,44 +1031,49 @@ function checkResponse($contentPerChapter, $qid, $qid1)
 function readHeadings($contents, $qid, $qid1)
 {
     global $dbc;
-    $document = new DOMDocument();
+    if (!empty($contents)) {
+        $document = new DOMDocument();
 
-    $document->loadHTML($contents);
+        $document->loadHTML($contents);
 
-    $tags = array('p');
-    $texts = array();
+        $tags = array('p');
+        $texts = array();
 
-    foreach ($tags as $tag) {
+        foreach ($tags as $tag) {
 
-        $elementList = $document->getElementsByTagName($tag);
+            $elementList = $document->getElementsByTagName($tag);
 
-        $sort = 0;
-        foreach ($elementList as $element) {
-            $score = 0;
-            $text = explode("(", $element->textContent);
-            $text = $text[1];
-            $text = str_replace(")", "", $text);
+            $sort = 0;
+            foreach ($elementList as $element) {
+                $score = 0;
+                $text = explode("(", $element->textContent);
 
-            $score = $text != "" ? $text : $score;
+                if (!isset($text[1])) {
+                    $text[1] = null;
+                }
+                $text = $text[1];
+                $text = str_replace(")", "", $text);
 
-            $response = $text != "" ? "Correct!" : "Wrong!";
+                $score = $text != "" ? $text : $score;
 
-            if ($element->textContent != '') {
+                $response = $text != "" ? "Correct!" : "Wrong!";
 
-                $query_insert_toc = "INSERT INTO project_course_choices (question_id,text,score,response) 
+                if ($element->textContent != '') {
+
+                    $query_insert_toc = "INSERT INTO project_course_choices (question_id,text,score,response) 
                VALUES (" . $qid . ",'" . mysqli_real_escape_string($dbc, $element->textContent) . "'," . $score . ",'" . $response . "')
                ON DUPLICATE KEY UPDATE text=values(text)";
 
-                mysqli_query($dbc, $query_insert_toc) or die(mysqli_error($dbc));
+                    mysqli_query($dbc, $query_insert_toc) or die(mysqli_error($dbc));
+                }
+
+
             }
-
-
         }
+
+
     }
-
-
 }
-
 
 function addQuestions($sort_id, $chapter_nums, $chapter, $contentPerChapter, $qtype, $Page_id)
 {
@@ -1096,16 +1158,16 @@ function bUpdate()
 //echo "<pre>";
 //print_r($archive_inserts);
 
-   // foreach ($difference as $key => $value) {
+    // foreach ($difference as $key => $value) {
 
-        $query = "UPDATE   toc a SET a.bUpdate = 1 WHERE chapter_id IN ('" .implode(',',array_keys($difference)). "') ";
+    $query = "UPDATE   toc a SET a.bUpdate = 1 WHERE chapter_id IN ('" . implode(',', array_keys($difference)) . "') ";
 
-        $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+    $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
-        if (!$result) {
-            echo "Something wrong  " . $result;
-        }
-   // }
+    if (!$result) {
+        echo "Something wrong  " . $result;
+    }
+    // }
 
 
     $query_update = "UPDATE   archived_toc a SET a.bDelete=1

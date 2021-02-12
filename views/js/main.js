@@ -28,6 +28,7 @@ var course_form;
 var doc_name = null;
 var doc_url;
 var description;
+var server_id;
 
 /************** Get and set  windows dimensions******************/
 if (typeof (main_layout.innerWidth) == 'number') {

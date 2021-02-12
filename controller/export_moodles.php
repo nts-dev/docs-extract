@@ -2,7 +2,6 @@
 header("Access-Control-Allow-Origin: *");
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 
-
 define('CREATE_COURSE', 1);
 define('CREATE_MODULES', 2);
 define('UPDATE_COURSE', 3);
@@ -14,38 +13,36 @@ define('ADD_MODULES', 14);
 
 include_once 'config.php';
 
+
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('display_errors', '1');
 require_once 'curl.php';
-$responses = [];
-$responsesModules = [];
-$updateModules = [];
 //create connection to remote
-$remoteDbc = @mysqli_connect('83.98.243.187', 'root', 'kenya1234', 'moodle_doc_db');
+$remoteDbc = @mysqli_connect('83.98.243.187', 'root', 'kenya1234','moodle_doc_db');
+//$dbc = mysqli_connect('192.168.1.2:3308', 'poweruser', 'iMfFIg7gAxCmstc76KyQ', 'moodle_doc_db');
+
 if (!$remoteDbc) {
     $response = [
-        'response' => true,
+        'connect' => false,
         'text' => 'Can not connect to remote server',
     ];
-    $responses[] = $response;
-    //echo json_encode($response);
-} else {
-    $response = [
-        'response' => true,
-        'text' => 'Remote server found',
-    ];
-    $responses[] = $response;
 }
+else{
+     $response = [
+        'connect' => true,
+        'text' => 'Remote server found...',
+    ];
+}
+//echo json_encode($response);
 
 
-$document_id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+   $document_id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
 if (!$document_id)
     $document_id = filter_input(INPUT_GET, 'doc_id', FILTER_SANITIZE_NUMBER_INT);
 if (!$document_id)
     $document_id = filter_input(INPUT_GET, 'document_id', FILTER_SANITIZE_NUMBER_INT);
 if (!$document_id)
     $document_id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
-
 
 list($token, $domain) = getToken($document_id);
 //
@@ -54,16 +51,7 @@ $domainname = $domain;//https://education.nts.nl'; //paste your domain here
 $wstoken = $token;//'d59c0678332d86f0e78e16d523acbe6e'; //here paste your enrol token
 $restformat = 'json';
 $doc_name = '';
-if (empty($domainname) && empty($wstoken)) {
-    $response = [
-        'response' => false,
-        'text' => 'Domain and Token Are Missing!',
-    ];
-    $responses[] = $response;
-    echo json_encode($responses);
-    return;
 
-}
 $moodle_ids = [];
 
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
@@ -103,7 +91,7 @@ switch ($action) {
               LEFT JOIN course_server ON documents.id = course_server.document_id
               LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE documents.id=" . $document_id;
 
-        $documents_result = mysqli_query($dbc, $documents_query);
+        $documents_result = mysqli_query($dbc, $documents_query)or die(mysqli_error($dbc));
         $documents_num_rows = mysqli_num_rows($documents_result);
 
         if ($documents_num_rows == 0) {
@@ -132,7 +120,7 @@ switch ($action) {
             echo json_encode($response);
             break;
         }
-
+    
 
         if ($documents['moodle_course_id'] <= 0 && $Update) {
 
@@ -165,12 +153,10 @@ switch ($action) {
 
             break;
         }
-        $server_id = $documents['server_id'];
-
-        addCourse($document_id);
-
-
-        echo json_encode($responses);
+         $server_id=$documents['server_id'];
+		 
+        $response = addCourse($document_id);
+        echo json_encode($response);
 
         break;
 
@@ -185,13 +171,17 @@ switch ($action) {
         $section_id = 1;
         $section_name = '';
 
-        addModules($document_id);
-        updateMoodle_id($moodle_ids, 0, true);
-
-        checkQuestions($document_id);
-        echo json_encode($responsesModules);
+        $response_data = addModules($document_id);
 
 
+        $response = updateMoodle_id($moodle_ids, 0, true);
+
+        if($response){
+            checkQuestions($document_id);
+
+        echo json_encode($response_data);
+
+}
         break;
 
     case UPDATE_COURSE:
@@ -304,27 +294,21 @@ switch ($action) {
         $restformat = 'json';
         $doc_name = '';
 
-        deleteModules($id_arr);
+        $response = deleteModules($id_arr);
 
         updateArchivedToc($doc_id);
 
-        echo json_encode($updateModules);
+        echo json_encode($response);
         break;
 
 
     case ADD_MODULES:
         $doc_id = filter_input(INPUT_GET, 'doc_id');
-        $id_arr = filter_input(INPUT_GET, 'dids');
 
-        if ($id_arr) {
-            $id_arr = explode(', ', $id_arr);
-            sort($id_arr);
-        }
-        $id = filter_input(INPUT_GET, 'ids');
-        if ($id) {
-            $id = explode(',', $id);
-            sort($id);
-        }
+        $id = filter_input(INPUT_GET, 'id');
+
+        $id = explode(',', $id);
+        sort($id);
 
         list($token, $domain) = getToken($doc_id);
         $domainname = $domain;
@@ -332,16 +316,12 @@ switch ($action) {
         $restformat = 'json';
         $doc_name = '';
 
-        if (!empty($id)) {
-            addModulePageLessonSection($id, $doc_id);
-        }
-        if (!empty($id_arr)) {
-            deleteModules($id_arr);
-        }
+
+        $response = addModulePageLessonSection($id, $doc_id);
 
         updateArchivedToc($doc_id);
 
-        echo json_encode($updateModules);
+     echo json_encode($response);
 
         break;
     case ADD_COURSE:
@@ -358,19 +338,25 @@ switch ($action) {
 }
 
 
+
 function addModulePageLessonSection($ids, $doc_id)
 {
-    global $dbc, $updateModules;
+
+    global $dbc;
+
+
     $query = "SELECT  toc.* ,course_server.moodle_course_id  FROM toc  JOIN course_server ON course_server.document_id = toc.doc_id WHERE toc.id IN (" . implode(',', $ids) . ") ORDER BY sort_id ASC ";
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
     $module_id = 0;
     $toAddLessonPages = [];
-    $toAddUpdateLessonPos = [];
+    $toAddUpdateLessonPos=[];
     $id = '';
     $content = '';
     $name = '';
 
     while ($row = mysqli_fetch_assoc($result)) {
+
+
         $ispage = false;
         $isLesson = false;
         $islessonPage = false;
@@ -384,9 +370,10 @@ function addModulePageLessonSection($ids, $doc_id)
         } else if ($row["type"] == "lessonpage")
             $islessonPage = true;
 
+
         $parent_id = $row['parent_id'];
         $id = $row['id'];
-        $name = $row['chapter_id'] . " " . $row['chapter'];
+        $name = $row['chapter_id'] ." ". $row['chapter'];
         $content = $row["uppercss"] . $row["content"] . $row["lowercss"];
         $moodle_id = $row['moodle_id'];
         $module_id = $row['module_id'];
@@ -407,41 +394,43 @@ function addModulePageLessonSection($ids, $doc_id)
         if ($moodle_id > 0) {
 
             if ($ispage) {
+                if ($row['bChanged'] > 0||$row['bUpdate'] > 0) {
+                    $sectionname = $row['chapter_id'] . $row['chapter'];
 
+                    updateTopicName($Mdl_section_id, $sectionname, $moodle_id, $id);
 
-                if ($row['bChanged'] > 0 || $row['bUpdate'] > 0) {
-                    $sectionname = $row['chapter_id'] ." ". $row['chapter'];
-
-                    updateTopicName($Mdl_section_id, $sectionname, $moodle_id, $id, true);
-
-                    UpdatePage($moodle_id, $content,$sectionname);
+                    UpdatePage($moodle_id, $content);
 
                     UpdatePageNameContent($moodle_id, $name, $content);
                 }
 
 
-                updateMoodle_idonInsert($moodle_id, $Mdl_section_id, $id, $module_id);
+                updateMoodle_idonInsert($moodle_id, $Mdl_section_id, $id,$module_id);
             }
 
             if ($isLesson) {
+                if ($row['bUpdate'] > 0||$row['bChanged'] > 0) {
 
-                if ($row['bUpdate'] > 0 || $row['bChanged'] > 0) {
                     UpdateLesson($lesson, $name, $course_id);
-                    UpdateLessonPage($moodle_id, $content,$name, true);
-                    UpdateLessonPageName($moodle_id, $name, $course_id, true);
+
+                    UpdateLessonPage($moodle_id, $content);
+
+                    UpdateLessonPageName($moodle_id, $name, $course_id);
+
+
                 }
-                updateMoodle_idonInsert($moodle_id, $lesson, $id, $module_id);
+                updateMoodle_idonInsert($moodle_id, $lesson, $id,$module_id);
             }
             if ($islessonPage) {
 
                 if ($row['bUpdate'])
-                    UpdateLessonPage($moodle_id, $content,$name, false);
+                    UpdateLessonPage($moodle_id, $content);
 
                 if ($row['bChanged'] > 0) {
-                    UpdateLessonPageName($moodle_id, $name, $course_id, false);
+                    UpdateLessonPageName($moodle_id, $name, $course_id);
 
                 }
-                updateMoodle_idonInsert($moodle_id, $lesson, $id, $module_id);
+                updateMoodle_idonInsert($moodle_id, $lesson, $id,$module_id);
             }
 
 
@@ -453,19 +442,15 @@ function addModulePageLessonSection($ids, $doc_id)
 
 
                 if ($pageid) {
-                    $response = [
-                        'response' => true,
-                        'text' => $name.' Page inserted successfully Updated',
-                    ];
-                    $updateModules[] = $response;
+
+                    $data['data'] = array('response' => true, 'text' => 'Page inserted successfully Updated');
                 } else {
+
                     $response = [
                         'response' => false,
-                        'text' => 'An Error Occured While Saving '.$name,
+                        'text' => 'An Error Occured While Saving!',
                     ];
-
-                    $updateModules[] = $response;
-                    return;
+                    return $response;
                 }
 
 
@@ -473,56 +458,44 @@ function addModulePageLessonSection($ids, $doc_id)
 
                 list($lesson_id, $moduleid) = insertLessons($dataObject);
 
-                if ($lesson_id > 0) {
+                    if ($lesson_id > 0) {
 
-                    $lessonObject = [
-                        'lessonid' => $lesson_id,
-                        'title' => $row['chapter_id'] ." ". $row['chapter'],
-                        'contents' => $row["uppercss"] . $row["content"] . $row["lowercss"],
-                    ];
 
-                    $response = [
-                        'response' => true,
-                        'text' => $row['chapter_id'] ." ". $row['chapter'].' Lesson Inserted',
-                    ];
-                    $updateModules[] = $response;
+                        $lessonObject = [
+                            'lessonid' => $lesson_id,
+                            'title' => $row['chapter_id'] . $row['chapter'],
+                            'contents' => $row["uppercss"] . $row["content"] . $row["lowercss"],
+                        ];
 
-                    $lessonPageId = insertLessonPage($lessonObject, $id, $module_id);
 
-                    if ($lessonPageId) {
+                        $lessonPageId = insertLessonPage($lessonObject, $id, $module_id);
+
                         updateMoodle_idonInsert($lessonPageId, $lesson_id, $id, $moduleid);
+
+
+                        $modules = new stdClass;
+                        $modules->module_id = $moduleid;
+                        $modules->sort_id = $row['sort_id'];
+                        $modules->section = $section_id;
+                        $modules->doc_id = $row['doc_id'];
+                        $modules->chapter_id = $row['chapter_id'];
+                        $modules->type = $row['type'];
+
+                        $toAddUpdateLessonPos[] = $modules;
+
+
                         $response = [
                             'response' => true,
-                            'text' => $row['chapter_id'] ." ". $row['chapter'].' LessonPage Inserted',
+                            'text' => 'Lesson/page Inserted!',
                         ];
-                        $updateModules[] = $response;
-                    } else {
-                        $response = [
-                            'response' => true,
-                            'text' => 'problem Occured while inserting a lesson page',
-                        ];
-                        $updateModules[] = $response;
-                    }
-
-                    $modules = new stdClass;
-                    $modules->module_id = $moduleid;
-                    $modules->sort_id = $row['sort_id'];
-                    $modules->section = $section_id;
-                    $modules->doc_id = $row['doc_id'];
-                    $modules->chapter_id = $row['chapter_id'];
-                    $modules->type = $row['type'];
-
-                    $toAddUpdateLessonPos[] = $modules;
-
 
                 } else {
 
-                    $response = [
-                        'response' => true,
-                        'text' => 'problem Occured while inserting  lesson '.$row['chapter_id'] . $row['chapter'],
-                    ];
-                    $updateModules[] = $response;
-                    return;
+                        $response = [
+                            'response' => false,
+                            'text' => 'An Error Occured While Saving!',
+                        ];
+                    return $response;
 
                 }
 
@@ -547,26 +520,34 @@ function addModulePageLessonSection($ids, $doc_id)
         }
     }
 
-    if (count($toAddLessonPages) > 0)
-        searchLessonids($toAddLessonPages);
+if(count($toAddLessonPages)>0)
+    searchLessonids($toAddLessonPages);
 
-    if (count($toAddUpdateLessonPos) > 0)
-        searchmodules($toAddUpdateLessonPos, $course_id);
+   if(count($toAddUpdateLessonPos)>0)
+         searchmodules($toAddUpdateLessonPos,$course_id);
+
+    $response = [
+        'response' => true,
+        'doc_id' => $doc_id,
+        'text' => 'Lesson/page Updated Successfully!',
+    ];
+
+
+   return $response;
 
 
 }
-
-function searchmodules($toAddUpdateLessonPos, $course_id)
-{
+function searchmodules($toAddUpdateLessonPos,$course_id){
 
     global $dbc;
-    $toAddmodule_ids = [];
-    foreach ($toAddUpdateLessonPos as $obj) {
+    $toAddmodule_ids=[];
+    foreach ($toAddUpdateLessonPos as $obj){
 
-        $query = 'SELECT  toc.module_id  FROM toc  WHERE toc.doc_id ="' . $obj->doc_id . '" AND type = "' . $obj->type . '" AND section_id="' . $obj->section . '" AND chapter_id >"' . $obj->chapter_id . '" ORDER BY toc.chapter_id ASC LIMIT 1 ';
+        $query = 'SELECT  toc.module_id  FROM toc  WHERE toc.doc_id ="'.$obj->doc_id.'" AND type = "'.$obj->type.'" AND section_id="'.$obj->section.'" AND chapter_id >"'.$obj->chapter_id.'" ORDER BY toc.chapter_id ASC LIMIT 1 ';
         $results = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($rows = mysqli_fetch_assoc($results)) {
+
 
 
             $moodle_object = new stdClass;
@@ -582,21 +563,19 @@ function searchmodules($toAddUpdateLessonPos, $course_id)
 //    echo "<pre>";
 //
 //    print_r($toAddmodule_ids);
-    moveToCorrectLocation($toAddmodule_ids, $course_id);
+    moveToCorrectLocation($toAddmodule_ids,$course_id);
 }
+function moveToCorrectLocation($toAddmodule_ids,$course_id){
 
-function moveToCorrectLocation($toAddmodule_ids, $course_id)
-{
-
-    foreach ($toAddmodule_ids as $module_id) {
+    foreach ($toAddmodule_ids as $module_id){
 
         global $domainname, $moodle_ids;
 
-        $obj = [
-            'module_id_to' => $module_id->prevModuleId,
-            'module_id' => $module_id->module_id,
-            'section' => $module_id->section,
-            'course_id' => $course_id,
+        $obj=[
+            'module_id_to'=> $module_id->prevModuleId,
+            'module_id'=> $module_id->module_id,
+            'section'=> $module_id->section,
+            'course_id'=>$course_id,
         ];
         $curl = new curl;
         $serverurl = $domainname . "/moosh.php?action=9";
@@ -608,33 +587,29 @@ function moveToCorrectLocation($toAddmodule_ids, $course_id)
     }
 
 }
-
-function checkQuestions($doc_id)
-{
+function checkQuestions($doc_id){
     global $dbc;
-    $id_array = [];
-    $query = "SELECT id, lesson_id FROM toc where hasQuestion = 1 and doc_id= " . $doc_id;
+$id_array=[];
+   $query="SELECT id, lesson_id FROM toc where hasQuestion = 1 and doc_id= ".$doc_id;
 
     $results = mysqli_query($dbc, $query);
 
     while ($row = mysqli_fetch_array($results)) {
 
-        $ids = new stdClass;
+        $ids= new stdClass;
         $ids->id = $row['id'];
         $ids->lesson = $row['lesson_id'];
 
         $id_array[] = $ids;
     }
 
-    foreach ($id_array as $id) {
-        addQuestions($id->id, $id->lesson);
+    foreach ($id_array as $id){
+        addQuestions($id->id,$id->lesson);
     }
 }
+function addQuestions($page_id,$lesson_id){
 
-function addQuestions($page_id, $lesson_id)
-{
-
-    global $domainname, $dbc;
+    global $domainname,$dbc;
     $objects = [];
     $prevpageid = $page_id;
 
@@ -656,7 +631,7 @@ function addQuestions($page_id, $lesson_id)
             JOIN project_course_question question ON question.id = question_page.question_id
             LEFT JOIN project_course_choices choices ON choices.question_id = question.id
             WHERE
-                question_page.page_id = " . $page_id . "
+                question_page.page_id = ".$page_id. "
             ORDER BY
                 question.id";
 
@@ -714,12 +689,12 @@ function addQuestions($page_id, $lesson_id)
     if ($response->success) {
 
         foreach ($response->page_ids as $pid => $mid) {
-            $updatePages = "UPDATE project_course_question_to_page SET moodle_id = " . $mid . ",is_updated=0 WHERE question_id = " . $pid . " AND page_id = " . $page_id;
+            $updatePages = "UPDATE project_course_question_to_page SET moodle_id = " .$mid.",is_updated=0 WHERE question_id = " .$pid." AND page_id = " . $page_id;
             mysqli_query($dbc, $updatePages);
         }
 
         foreach ($response->choice_ids as $pid => $mid) {
-            $updateAnswers = "UPDATE project_course_choices SET moodle_id = " . $mid . ",is_updated=0 WHERE id = " . $pid;
+            $updateAnswers = "UPDATE project_course_choices SET moodle_id = " . $mid. ",is_updated=0 WHERE id = " .$pid;
             mysqli_query($dbc, $updateAnswers);
         }
 
@@ -734,7 +709,6 @@ function addQuestions($page_id, $lesson_id)
     }
 
 }
-
 function searchLessonids($toAddLessonPages)
 {
     global $dbc;
@@ -744,25 +718,25 @@ function searchLessonids($toAddLessonPages)
     foreach ($toAddLessonPages as $obj) {
 
         //get id from the seconf dot
-        $lesson = preg_split("/(.*?\..*?)\./", $obj->chapter_id, NULL,
+        $lesson = preg_split ("/(.*?\..*?)\./", $obj->chapter_id, NULL,
             PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
         $lesson = $lesson[0];
 
-        $query = 'SELECT  toc.lesson_id  FROM toc WHERE toc.sort_id < "' . $obj->sort_id . '" AND toc.doc_id="' . $obj->doc_id . '"AND toc.section_id="' . $obj->section . '" AND chapter_id = "' . $lesson . '"';
+        $query = 'SELECT  toc.lesson_id  FROM toc WHERE toc.sort_id < "' . $obj->sort_id . '" AND toc.doc_id="' . $obj->doc_id . '"AND toc.section_id="' . $obj->section . '" AND chapter_id = "'.$lesson.'"';
         $results = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($rows = mysqli_fetch_assoc($results)) {
 
-            $toAddLesson_ids[] = $rows["lesson_id"];
+                $toAddLesson_ids[] = $rows["lesson_id"];
 
-            $moodle_object = new stdClass;
-            $moodle_object->id = $obj->id;
-            $moodle_object->lesson_id = $rows["lesson_id"];
-            $moodle_object->name = $obj->name;
-            $moodle_object->content = $obj->content;
-            $moodle_object->module_id = $rows["module_id"];
+                $moodle_object = new stdClass;
+                $moodle_object->id = $obj->id;
+                $moodle_object->lesson_id = $rows["lesson_id"];
+                $moodle_object->name = $obj->name;
+                $moodle_object->content = $obj->content;
+                $moodle_object->module_id = $rows["module_id"];
 
-            $toAddLesson_ids[] = $moodle_object;
+                $toAddLesson_ids[] = $moodle_object;
 
 
         }
@@ -777,33 +751,34 @@ function addlessonpages($toAddLesson_ids)
     $lesson_id = 0;
 
     $toAddLesson_ids = array_filter($toAddLesson_ids);
-    sort($toAddLesson_ids);
+sort($toAddLesson_ids);
     foreach ($toAddLesson_ids as $obj) {
 
-        if ($obj->lesson_id != '') {
+if($obj->lesson_id != '') {
 
-            //echo $obj->lesson_id."=>".$obj->name;
+    //echo $obj->lesson_id."=>".$obj->name;
 
-            $lessonObject = [
-                'lessonid' => $obj->lesson_id,
-                'title' => $obj->name,
-                'contents' => $obj->content,
-            ];
-            $response = insertLessonPage($lessonObject, $obj->id);
-            updateMoodle_idonInsert($response, $obj->lesson_id, $obj->id, $obj->module_id);
+    $lessonObject = [
+        'lessonid' => $obj->lesson_id,
+        'title' => $obj->name,
+        'contents' => $obj->content,
+    ];
+    $response = insertLessonPage($lessonObject, $obj->id);
+    updateMoodle_idonInsert($response, $obj->lesson_id, $obj->id,$obj->module_id);
 
-        } else {
-            if ($lesson_id) {
-                // echo $lesson_id . "=>" . $obj->name;
-                $lessonObject = [
-                    'lessonid' => $lesson_id,
-                    'title' => $obj->name,
-                    'contents' => $obj->content,
-                ];
-                $response = insertLessonPage($lessonObject, $obj->id);
-                updateMoodle_idonInsert($response, $lesson_id, $obj->id, $obj->module_id);
-            }
-        }
+}
+else {
+    if ($lesson_id) {
+       // echo $lesson_id . "=>" . $obj->name;
+        $lessonObject = [
+            'lessonid' => $lesson_id,
+            'title' => $obj->name,
+            'contents' => $obj->content,
+        ];
+         $response = insertLessonPage($lessonObject, $obj->id);
+        updateMoodle_idonInsert($response, $lesson_id, $obj->id,$obj->module_id);
+    }
+}
         $responses['data'] = array('response' => false, 'text' => 'LessonPage inserted!');
         $lesson_id = $obj->lesson_id;
 
@@ -813,7 +788,7 @@ function addlessonpages($toAddLesson_ids)
 
 function deleteModules($id_arr)
 {
-    global $dbc,$updateModules;
+    global $dbc;
 
     $query = "SELECT  archived_toc.* ,course_server.moodle_course_id  FROM archived_toc JOIN course_server ON course_server.document_id = archived_toc.doc_id WHERE archived_toc.id IN(" . implode(',', $id_arr) . ")";
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
@@ -840,11 +815,10 @@ function deleteModules($id_arr)
         $lesson_id = $row['lesson_id'];
         $parent_id = $row['parent_id'];
         $sectionid = $row['lesson_id'];
-        $name =   $row['chapter_id']." ".$row['chapter'];
 
         if ($parent_id == 0) {
 
-            $page = deletePages($module_id, $instance_id, $course_id,$name);
+            $page = deletePages($module_id, $instance_id, $course_id);
             if ($page)
                 deleteSection($sectionid, $course_id);
 
@@ -856,17 +830,24 @@ function deleteModules($id_arr)
             // echo json_encode($response);
         }
         if ($isLesson) {
-            deleteLesson($lesson_id, $course_id,$name);
+            deleteLesson($lesson_id, $course_id);
 
         }
         if (!$ispage && !$isLesson) {
-            deleteLessonPages($instance_id, $course_id,$name);
+            deleteLessonPages($instance_id, $course_id);
 
         }
     }
 //delete chapters in archive toc after updating
     deleteChapters($toDeletemoodle_ids);
 
+    $response = [
+        'response' => false,
+        'text' => 'Pages/Lesson Pages Deleted!',
+    ];
+
+
+    return $response;
 }
 
 function updatesectionName($obj)
@@ -941,10 +922,10 @@ function deleteSection($sectionid, $course_id)
     return $pageData;
 }
 
-function deletePages($module_id, $instance_id, $course_id,$name)
+function deletePages($module_id, $instance_id, $course_id)
 {
 
-    global $domainname, $wstoken, $updateModules;
+    global $domainname, $wstoken;
 
     $modulesObject = [
         'instance_id' => $instance_id,
@@ -956,20 +937,14 @@ function deletePages($module_id, $instance_id, $course_id,$name)
     $serverurl = $domainname . "/data_content.php?action=9";
     $pageData = $curl->post($serverurl, $modulesObject);
 
-
-    $response = [
-        'response' => true,
-        'text' => $name. " Page Deleted!"
-    ];
-    $updateModules[] = $response;
     return $pageData;
 }
 
 //delete lesson
-function deleteLesson($lesson_id, $course_id,$name)
+function deleteLesson($lesson_id, $course_id)
 {
 
-    global $domainname, $wstoken, $updateModules;
+    global $domainname, $wstoken;
 
     $modulesObject = [
         'lessonid' => $lesson_id,
@@ -980,47 +955,36 @@ function deleteLesson($lesson_id, $course_id,$name)
     $serverurl = $domainname . "/data_content.php?action=14";
     $lessonData = $curl->post($serverurl, $modulesObject);
 
-    if ($lessonData) {
-        $response = [
-            'response' => true,
-            'text' => $name." Lesson Deleted!"
-        ];
-        $updateModules[] = $response;
-    } else {
-        $response = [
-            'response' => false,
-            'text' => "Unable to delete Lesson".$name
-        ];
-        $updateModules[] = $response;
-    }
     return $lessonData;
 }
 
-function deleteLessonPages($instance_id, $course_id,$name)
+function deleteLessonPages($instance_id, $course_id)
 {
-    global $domainname, $wstoken, $updateModules;
+
+    global $domainname, $wstoken;
+
     $modulesObject = [
         'instance_id' => $instance_id,
         'course_id' => $course_id
     ];
+
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=10";
     $pageData = $curl->post($serverurl, $modulesObject);
-    if ($pageData) {
-        $response = [ 'response' => true,'text' => $name." LessonPage Deleted!"];
-        $updateModules[] = $response;
-    } else {
-        $response = ['response' => false,'text' => "Unable to delete LessonPage ".$name ];
-        $updateModules[] = $response;
-    }
+
     return $pageData;
 }
 
 function updateCourse($document_id, $course_id)
 {
+
     $deleteResult = deleteCourseModules($course_id);
+
     if (!$deleteResult) {
-        $response = ['response' => false,'text' => 'Failed Deleting!',];
+        $response = [
+            'response' => false,
+            'text' => 'Failed Deleting!',
+        ];
         return $response;
     }
 
@@ -1040,20 +1004,25 @@ function updateCourse($document_id, $course_id)
 
 function addModules($document_id, $isUpdate = false)
 {
-    global $moodle_ids, $responsesModules;
+    global $moodle_ids;
     $objectsCreated = createObjects($document_id);
 
     if ($objectsCreated) {
+
         if (!$isUpdate)
             addToArchive($document_id);
+
         $response = [
             'response' => true,
             'text' => $isUpdate ? 'Modules Updated' : 'Course Created with all Modules Added Successfully!',
         ];
-        $responsesModules[] = $response;
+
     } else {
-        $response = ['response' => false,'text' => $isUpdate ? 'Failed Updating Modules' : 'Failed Adding Modules!',];
-        $responsesModules[] = $response;
+
+        $response = [
+            'response' => false,
+            'text' => $isUpdate ? 'Failed Updating Modules' : 'Failed Adding Modules!',
+        ];
     }
 
     return $response;
@@ -1061,11 +1030,19 @@ function addModules($document_id, $isUpdate = false)
 
 function addCourse($document_id, $isUpdate = false)
 {
-    global $responses;
+
+
     $createCourseResult = createCourse($document_id);
+
+//    echo "<pre>";
+//
+//    print_r($createCourseResult);
+
+
     if (!$createCourseResult['response']) {
         return $createCourseResult;
     }
+
     $course_id = $createCourseResult['course_id'];
 
     if ($course_id) {
@@ -1075,14 +1052,16 @@ function addCourse($document_id, $isUpdate = false)
             'toExport' => true,
             'course_id' => $course_id,
             'id' => $document_id,
-            'text' => $isUpdate ? 'Updating...' : 'Course Created Successfuly, Adding Modules...',
+            'text' => $isUpdate ? 'Updating...' : 'Course Created successfuly, Adding Modules...',
         ];
-        $responses[] = $response;
     } else {
-        $response = [ 'response' => false,'text' => $isUpdate ? 'Updating Failed' : 'Failed Creating Course, Try Again!',];
-        $responses[] = $response;
-        return;
+        $response = [
+            'response' => false,
+            'text' => $isUpdate ? 'Updating Failed' : 'Failed Creating Course, Try Again!',
+        ];
     }
+
+    return $response;
 }
 
 function deleteCourseModules($course_id)
@@ -1093,7 +1072,10 @@ function deleteCourseModules($course_id)
 
     $wsfunctionname = 'core_course_delete_courses';
 
-    $params = ['courseids' => [$course_id],];
+    $params = [
+        'courseids' => [$course_id],
+    ];
+
     $serverurl = $domainname . "/webservice/rest/server.php?wstoken=" . $wstoken . "&wsfunction=" . $wsfunctionname;
 
     $curl = new curl;
@@ -1110,7 +1092,9 @@ function deleteCourseModules($course_id)
 //functions
 function createCourse($document_id)
 {
-    global $domainname, $wstoken, $doc_name, $dbc, $remoteDbc, $doc_url, $details, $server_id, $responses;
+
+
+    global $domainname, $wstoken, $doc_name, $dbc,$remoteDbc,$doc_url,$details,$server_id;
 
     $restformat = 'json';
 
@@ -1129,29 +1113,37 @@ function createCourse($document_id)
             ],
         ],
     ];
+
     $serverurl = $domainname . "/webservice/rest/server.php?wstoken=" . $wstoken . "&wsfunction=" . $wsfunctionname;
+
     $curl = new curl;
     $restformat = ($restformat == 'json') ? '&moodlewsrestformat=' . $restformat : '';
     $resp = $curl->post($serverurl . $restformat, $params);
     $coursedata = json_decode($resp);
 
-    if (!$coursedata) {
-        $response = ['response' => false,'text' => $resp,];
-        $responses[] = $response;
+ if ($coursedata->errorcode) {
 
-        return;
-    }
-    if ($coursedata->errorcode) {
-        $response = ['response' => false,'text' => $coursedata->message,
+        $response = [
+            'response' => false,
+            'text' =>$coursedata->message,
         ];
-        $responses[] = $response;
-        return;
+
+        return $response;
+
     }
+
     if (count($coursedata) == 0) {
-        $response = ['response' => false,'text' => $coursedata,];
-        $responses[] = $response;
-        return;
+        $response = [
+            'response' => false,
+            'text' => $coursedata,
+        ];
+
+        return $response;
     }
+
+
+   
+
 
     $course_id = $coursedata[0]->id;
 
@@ -1159,43 +1151,64 @@ function createCourse($document_id)
     $updateResult = mysqli_query($dbc, $update);
 
     if (!$updateResult) {
-        $response = ['response' => true,'text' => 'Failed to update moodle course id!',];
-        $responses[] = $response;
-        return;
+        $response = [
+            'response' => false,
+            'text' => 'Failed to update moodle course id!',
+        ];
+
+        return $response;
     }
+	
+	if($remoteDbc!= false){
+       if($domainname != "https://education.nts.nl") {
 
-    if ($remoteDbc != false) {
-        if ($domainname != "https://education.nts.nl") {
-
-            $dateTime = date("d.m.Y") . " " . date("h:i:sa");
-            $query_insert_document = 'INSERT INTO documents (doc_name,document_url,local_course_id,date_time,details) VALUES ("' . $doc_name . '", "' . $doc_url . '", "' . $course_id . '", "' . $dateTime . '","' . $details . '")
+    $dateTime = date("d.m.Y") . " " . date("h:i:sa");
+    $query_insert_document = 'INSERT INTO documents (doc_name,document_url,local_course_id,date_time,details) VALUES ("' . $doc_name . '", "' . $doc_url . '", "' . $course_id . '", "' . $dateTime . '","' . $details. '")
     ON DUPLICATE KEY UPDATE local_course_id=values(local_course_id)';
 
-            $result = mysqli_query($remoteDbc, $query_insert_document) or die(mysqli_error($remoteDbc));
-            $docid = mysqli_insert_id($remoteDbc);
-            if ($docid) {
-                $updateLocal = 'INSERT INTO course_server (document_id,server_id) VALUES (' . $docid . ',' . $server_id . ')
+    $result = mysqli_query($remoteDbc, $query_insert_document) or die(mysqli_error($remoteDbc));
+    $docid = mysqli_insert_id($remoteDbc);
+    if($docid){
+        $updateLocal = 'INSERT INTO course_server (document_id,server_id) VALUES (' . $docid . ',' . $server_id . ')
             ON DUPLICATE KEY UPDATE document_id=values(document_id)';
-                $updateLocalResult = mysqli_query($remoteDbc, $updateLocal);
+        $updateLocalResult = mysqli_query($remoteDbc, $updateLocal);
 
-                if (!$updateLocalResult) {
-                    $response = ['response' => true,'text' => 'Failed to update local course id!',];
-                    $responses[] = $response;
-                    return;
-                }
-            } else {
-                $response = ['response' => true,'text' => 'Can not connect to remote server!',];
-                $responses[] = $response;
-            }
+
+
+        if (!$updateLocalResult) {
+            $response = [
+                'response' => false,
+                'text' => 'Failed to update local course id!',
+            ];
+
+            return $response;
         }
     }
+
+   else{
+       $response = [
+           'response' => false,
+           'text' => 'Can not connect to remote server!',
+       ];
+
+       return $response;
+   }
+
+}
+	}
     $response = [
-        'response' => true,'course_id' => $course_id,];
+        'response' => true,
+        'course_id' => $course_id,
+    ];
+
     return $response;
+
+
 }
 
 function createObjects($id)
 {
+	
 
     global $dbc;
     $response = true;
@@ -1217,7 +1230,7 @@ function createObjects($id)
         $obj->chapter_id = $row['chapter_id'];
         $obj->parent_id = $row['parent_id'];
         $obj->content = $row['uppercss'] . $row['content'] . $row['lowercss'];
-        $obj->raw_content = $row['content'];
+        $obj->raw_content=  $row['content'] ;
 
         if ($row['parent_id'] == 0) {
             $roots[] = $obj;
@@ -1241,7 +1254,7 @@ function createObjects($id)
 function printXML(stdClass $obj, $isRoot = false)
 {
 
-    global $section_id, $course_id, $section_name, $response, $moodle_ids;
+    global $section_id, $course_id, $section_name, $response,$moodle_ids;
 
     $dataObject = [
         'page_name' => $obj->chapter_id . " " . $obj->name,
@@ -1249,12 +1262,12 @@ function printXML(stdClass $obj, $isRoot = false)
         'parent_id' => $obj->parent_id,
         'content' => $obj->content,
         'course_id' => $course_id,
-        'id' => $obj->id
+        'id'=> $obj->id
     ];
 
     if ($isRoot) {
 
-        $section_name = $obj->chapter_id . ' ' . $obj->name;
+        $section_name = $obj->chapter_id .' '. $obj->name;
         $response = createPage($obj->id, $dataObject, $section_name);
 
         foreach ($obj->children as $child) {
@@ -1263,37 +1276,51 @@ function printXML(stdClass $obj, $isRoot = false)
         $section_id++;
     } else {
 
-        list($lessonid, $module_id) = createLesson($obj->id, $dataObject, false);
+        list($lessonid,$module_id) = createLesson($obj->id, $dataObject, false);
+
         $has_children = count($obj->children) > 0;
-        $lessondataObject = [
-            'title' => $obj->chapter_id . " " . $obj->name,
-            'lessonid' => $lessonid,
-            'contents' => $obj->content,
 
-        ];
-        $lessonPageId = insertLessonPage($lessondataObject, $lessonid, $module_id);
+       // if(preg_replace('/<(script|style).*>.*<\/\1>/i', '', $obj->raw_content)!= ''){
 
-        if ($lessonPageId > 0) {
+            $lessondataObject = [
+                'title' => $obj->chapter_id . " " . $obj->name,
+                'lessonid' => $lessonid,
+                'contents' => $obj->content,
 
-            $moodle_object = new stdClass;
-            $moodle_object->id = $obj->id;
-            $moodle_object->moodle_id = $lessonPageId;
-            $moodle_object->lessonid = $lessonid;
-            $moodle_object->module_id = $module_id;
-            $moodle_object->type = 'Lessonpage';
+            ];
 
-            $moodle_ids[] = $moodle_object;
-        }
+            $lessonPageId = insertLessonPage($lessondataObject, $lessonid,$module_id);
+
+            if ($lessonPageId>0) {
+
+                $moodle_object = new stdClass;
+                $moodle_object->id = $obj->id;
+                $moodle_object->moodle_id = $lessonPageId;
+                $moodle_object->lessonid = $lessonid;
+                $moodle_object->module_id = $module_id;
+                $moodle_object->type = 'Lessonpage';
+
+                    $moodle_ids[] = $moodle_object;
+            }
+       // }
+
+
 
         if ($has_children) {
+
+//            $lessonid = createLesson($dataObject);
+
             if ($lessonid) {
 
                 foreach ($obj->children as $child) {
-                    createLessonPage($child, $lessonid, $module_id);
+                    createLessonPage($child, $lessonid,$module_id);
                 }
             }
-        }
-
+       }
+// else {
+////            createPage($dataObject);
+//            createLessonPage($obj, $lessonid);
+//        }
     }
 
     return $response;
@@ -1302,19 +1329,16 @@ function printXML(stdClass $obj, $isRoot = false)
 function createPage($id, $obj, $name)
 {
 
-    global $domainname, $wstoken, $dbc,$responsesModules;
+    global $domainname, $wstoken,$dbc;
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=3";
     $resp = $curl->post($serverurl, $obj);
     $pagedata = json_decode($resp);
 
-
     if ($pagedata->is_section) {
-        updateTopicName($pagedata->section, $name, $pagedata->page_id, $id, false);
+        updateTopicName($pagedata->section, $name, $pagedata->page_id, $id);
 
-        $response = ['response' => true,'text' => $name . " Added successfully",];
-        $responsesModules[] = $response;
-
+       // updateMoodle_idonInsert($pagedata->page_id, 0, $id ,$pagedata->section);
 
 
     }
@@ -1333,8 +1357,7 @@ function insertPage($obj, $name, $id)
 
     if ($pagedata->is_section) {
 
-
-        updateTopicName($pagedata->section, $name, $pagedata->page_id, $id, true);
+        updateTopicName($pagedata->section, $name, $pagedata->page_id, $id);
 
     }
     return $pagedata->page_id;
@@ -1380,10 +1403,10 @@ function insertLessons($obj)
     $lessondata = json_decode($resp);
 
     $lesson_id = $lessondata->data->row_id;
-    $module_id = $lessondata->data->module_id;
+    $module_id  = $lessondata->data->module_id;
 
 
-    return array($lesson_id, $module_id);
+    return  array($lesson_id, $module_id);
 
 
 }
@@ -1402,14 +1425,14 @@ function insertLessonPage($obj, $id)
     return $res->data->response;
 }
 
-function createLessonPage(stdClass $obj, $lessonid, $module_id)
+function createLessonPage(stdClass $obj, $lessonid,$module_id)
 {
 
     global $domainname, $moodle_ids;
 
     $pageObject = [
         'lessonid' => $lessonid,
-        'title' => $obj->chapter_id . ' ' . $obj->name,
+        'title' => $obj->chapter_id.' '.$obj->name,
         'contents' => $obj->content,
     ];
 
@@ -1429,13 +1452,16 @@ function createLessonPage(stdClass $obj, $lessonid, $module_id)
 
     foreach ($obj->children as $child) {
 
-        createLessonPage($child, $lessonid, $module_id);
+        createLessonPage($child, $lessonid,$module_id);
     }
 }
 
-function updateTopicName($section_id, $name, $pageid, $id, $check)
+function updateTopicName($section_id, $name, $pageid, $id)
 {
-    global $domainname, $wstoken, $restformat, $dbc, $updateModules,$responsesModules;
+
+    global $domainname, $wstoken, $restformat,$dbc;
+
+
     $wsfunctionname = 'core_update_inplace_editable';
 
     $params = [
@@ -1444,39 +1470,35 @@ function updateTopicName($section_id, $name, $pageid, $id, $check)
         'itemid' => $section_id,
         'value' => $name,
     ];
+
     $serverurl = $domainname . "/webservice/rest/server.php?wstoken=" . $wstoken . "&wsfunction=" . $wsfunctionname;
 
     $curl = new curl;
     $restformat = ($restformat == 'json') ? '&moodlewsrestformat=' . $restformat : '';
     $resp = $curl->post($serverurl . $restformat, $params);
-    $pagedata = json_decode($resp);
 
-    $response = ['response' => true,'text' => $name . " Updated successfully",];
 
-    if ($check) {
-        $updateModules[] = $response;
-    }
 
-    updateMoodle_idonInsert($pageid, $section_id, $id, $section_id);
+    updateMoodle_idonInsert($pageid, $section_id, $id ,$section_id);
+
+
+
 }
 
 function updateMoodle_id($moodle_ids, $id, $check)
 {
-    global $dbc, $responsesModules;
+    global $dbc;
 
     if ($check) {
         foreach ($moodle_ids as $obj) {
-            if ($obj->id > 0) {
-                $update = "UPDATE `toc` SET moodle_id ='" . $obj->moodle_id . "',lesson_id='" . $obj->lessonid . "',module_id=" . $obj->module_id . " , binsert =0,bUpdate=0,bChanged=0 WHERE id =" . $obj->id;
+            if ($obj->id) {
+
+
+                $update = "UPDATE `toc` SET moodle_id ='" . $obj->moodle_id . "',lesson_id='" . $obj->lessonid . "',module_id=" .$obj->module_id . " , binsert =0,bUpdate=0,bChanged=0 WHERE id =" . $obj->id;
                 $updateResult = mysqli_query($dbc, $update);
 
                 if (!$updateResult) {
-                    $response = [
-                        'response' => true,
-                        'text' => "Unable to update module " . $obj->id,
-                    ];
-                    $responsesModules[] = $response;
-                    return;
+                    echo "Problem update moodle_id ".$obj->moodle_id;
                 }
 
             }
@@ -1486,38 +1508,28 @@ function updateMoodle_id($moodle_ids, $id, $check)
         $updateResult = mysqli_query($dbc, $update);
 
         if (!$updateResult) {
-            $response = [
-                'response' => true,
-                'text' => "Unable to refresh " . $id,
-            ];
-            $responsesModules[] = $response;
-            return;
+            echo "Problem setting back to 0".$id;
         }
     }
-    return $updateResult;
+return $updateResult;
 
 }
 
-function updateMoodle_idonInsert($moodle_id, $lessonid, $id, $module_id)
+function updateMoodle_idonInsert($moodle_id, $lessonid, $id,$module_id)
 {
-    global $dbc, $responsesModules;
+    global $dbc;
 
 
     $update = "UPDATE `toc` SET module_id ='" . $module_id . "',lesson_id='" . $lessonid . "', moodle_id ='" . $moodle_id . "' , binsert =0,bUpdate=0,bChanged=0 WHERE id =" . $id;
     $updateResult = mysqli_query($dbc, $update);
 
     if (!$updateResult) {
-
-        $response = [
-            'response' => true,
-            'text' => "Unable to insert " . $id,
-        ];
-        $responsesModules[] = $response;
-        return;
+        echo "Problem update on insert ". $id;
     }
 }
 
 //update archived toc
+
 function updateArchivedToc($doc_id)
 {
     global $dbc;
@@ -1574,10 +1586,10 @@ function restoreCourse($course_id, $name)
     return $course_stat;
 }
 
-function UpdatePage($pageid, $pageContent,$sectionname)
+function UpdatePage($pageid, $pageContent)
 {
 
-    global $domainname, $wstoken, $updateModules;
+    global $domainname, $wstoken;
 
     $courseObject = [
         'page_id' => $pageid,
@@ -1593,17 +1605,15 @@ function UpdatePage($pageid, $pageContent,$sectionname)
 
         $response = [
             'response' => true,
-            'text' => $sectionname. ' Page Updated Successfully!',
+            'text' => 'Page Updated Successfully!',
         ];
-        $updateModules[] = $response;
 
     } else {
         $response = [
             'response' => false,
-            'text' => 'Failed Updating '.$sectionname.', try again!',
+            'text' => 'Failed Updating the page, try again!',
         ];
-        $updateModules[] = $response;
-        return;
+
     }
 
     return $response;
@@ -1612,63 +1622,76 @@ function UpdatePage($pageid, $pageContent,$sectionname)
 
 function UpdatePageNameContent($pageid, $name, $content)
 {
-    global $domainname, $wstoken, $updateModules;
+
+    global $domainname, $wstoken;
+
     $courseObject = [
         'page_id' => $pageid,
         'name' => $name,
         'content' => $content,
+
     ];
+
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=18";
     $pageData = $curl->post($serverurl, $courseObject);
+
     if ($pageData) {
+
         $response = [
             'response' => true,
-            'text' => $name.' Page Contents Updated Successfully!',
+            'text' => 'Page Updated Successfully!',
         ];
-        $updateModules[] = $response;
+
     } else {
-        $response = ['response' => false,'text' => 'Failed Updating '.$name.', try again!',];
-        $updateModules[] = $response;
-        return;
+        $response = [
+            'response' => false,
+            'text' => 'Failed Updating the page, try again!',
+        ];
+
     }
+
     return $response;
+
 }
 
 function UpdateLesson($lesson_id, $name, $course_id)
 {
-    global $domainname, $wstoken, $responses, $updateModules;
+    global $domainname, $wstoken;
 
     $courseObject = [
         'lesson_id' => $lesson_id,
         'name' => $name,
         'course_id' => $course_id
+
     ];
+
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=16";
     $pageData = $curl->post($serverurl, $courseObject);
 
     if ($pageData) {
+
         $response = [
             'response' => true,
-            'text' => $name.' Lesson Updated Successfully!',
+            'text' => 'Lesson Page Updated Successfully!',
         ];
-        $updateModules[] = $response;
 
     } else {
         $response = [
             'response' => false,
-            'text' => 'Failed Updating the Lesson '.$name.', try again!',
+            'text' => 'Failed Updating the Lesson page, try again!',
         ];
-        $updateModules[] = $response;
-        return;
+
     }
     return $pageData;
+
 }
-function UpdateLessonPage($pageid, $pageContent,$name, $check)
+
+function UpdateLessonPage($pageid, $pageContent)
 {
 
-    global $domainname, $wstoken, $updateModules;
+    global $domainname, $wstoken;
 
     $courseObject = [
         'page_id' => $pageid,
@@ -1684,26 +1707,23 @@ function UpdateLessonPage($pageid, $pageContent,$name, $check)
 
         $response = [
             'response' => true,
-            'text' => $name.' Lesson Page Updated Successfully!',
+            'text' => 'Lesson Page Updated Successfully!',
         ];
-        if (!$check)
-            $updateModules[] = $response;
+
     } else {
         $response = [
             'response' => false,
-            'text' => 'Failed Updating the Lesson page '.$name.' , try again!',
+            'text' => 'Failed Updating the Lesson page, try again!',
         ];
-        if (!$check)
-            $updateModules[] = $response;
-        return;
+
     }
     return $response;
 
 }
 
-function UpdateLessonPageName($id, $name, $course_id, $check)
+function UpdateLessonPageName($id, $name, $course_id)
 {
-    global $domainname, $wstoken, $updateModules;
+    global $domainname, $wstoken;
 
     $courseObject = [
         'id' => $id,
@@ -1720,20 +1740,15 @@ function UpdateLessonPageName($id, $name, $course_id, $check)
 
         $response = [
             'response' => true,
-            'text' => $name. ' Lesson Page Name Updated Successfully!',
+            'text' => 'Lesson Page Updated Successfully!',
         ];
-        if (!$check)
-            $updateModules[] = $response;
 
     } else {
         $response = [
             'response' => false,
-            'text' => 'Failed Updating the Lesson page Name '.$name.', try again!',
+            'text' => 'Failed Updating the Lesson page, try again!',
         ];
-        if (!$check)
-            $updateModules[] = $response;
 
-        return;
     }
     return $response;
 
