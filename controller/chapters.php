@@ -1,5 +1,5 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+
 include_once 'config.php';
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 $action = $_GET['action'];
@@ -71,7 +71,7 @@ switch ($action) {
     case 4:
 
         $ids = $_GET['id'];
-        $query = 'SELECT  toc.*,document.moodle_courseI_ID  FROM toc JOIN document ON document.id=toc.doc_id WHERE toc.id ="' . $ids . '"';
+        $query = 'SELECT  toc.*,documents.moodle_courseI_ID  FROM toc JOIN documents ON documents.id=toc.doc_id WHERE toc.id ="' . $ids . '"';
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
         $ispage = false;
         $isLesson = false;
@@ -441,6 +441,24 @@ switch ($action) {
 
     case 14:
         $ids = $_GET['id'];
+        $id = 0;
+
+        if($ids){
+            $query_1 = "SELECT moodle_servers.id
+                      FROM moodle_doc_db.documents
+                      LEFT JOIN moodle_doc_db.course_server ON documents.id = course_server.document_id
+                      LEFT JOIN moodle_doc_db.moodle_servers ON moodle_servers.id = course_server.server_id WHERE documents.id=".$ids;
+            $result_1 = mysqli_query($dbc, $query_1) or die(mysqli_error($dbc));
+
+
+
+
+           if ($row = mysqli_fetch_assoc($result_1)) {
+                 $id = $row["id"];
+            }
+
+        }
+
         $query = "SELECT  *  FROM moodle_servers ";
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
@@ -449,7 +467,16 @@ switch ($action) {
 
         echo '<complete>';
         while ($row = mysqli_fetch_assoc($result)) {
-            if( $row["id"] == 3) {
+
+              if($id>0) {
+                  if ($row["id"] === $id) {
+                      echo '<option value="' . $row["id"] . '" selected ="1" ><![CDATA[' . $row["name"] . ']]></option>';
+                  }
+                  else {
+                      echo '<option value="' . $row["id"] . '" ><![CDATA[' . $row["name"] . ']]></option>';
+                  }
+              }
+              else if( $row["name"] =="education.nts.nl") {
                 echo '<option value="'.$row["id"].'" selected ="1" ><![CDATA['.$row["name"].']]></option>';
             }
             else {
@@ -472,7 +499,7 @@ function treeDir($id,$stat)
 
 
 
-    $query = "SELECT  document.moodle_courseI_ID, toc.*  FROM toc JOIN document ON toc.doc_id=document.id WHERE toc.doc_id =".$id." ORDER BY toc.parent_id = 0 DESC, toc.sort_id ASC";
+    $query = "SELECT  documents.moodle_courseI_ID, toc.*  FROM toc JOIN documents ON toc.doc_id=documents.id WHERE toc.doc_id =".$id." ORDER BY toc.parent_id = 0 DESC, toc.sort_id ASC";
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
     $objects = array();
