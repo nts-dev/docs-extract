@@ -71,7 +71,7 @@ switch ($action) {
     case 4:
 
         $ids = $_GET['id'];
-        $query = 'SELECT  toc.*,documents.moodle_courseI_ID  FROM toc JOIN documents ON documents.id=toc.doc_id WHERE toc.id ="' . $ids . '"';
+        $query = 'SELECT  toc.*,document.moodle_courseI_ID  FROM toc JOIN document ON document.id=toc.doc_id WHERE toc.id ="' . $ids . '"';
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
         $ispage = false;
         $isLesson = false;
@@ -445,9 +445,9 @@ switch ($action) {
 
         if($ids){
             $query_1 = "SELECT moodle_servers.id
-                      FROM moodle_doc_db.documents
-                      LEFT JOIN moodle_doc_db.course_server ON documents.id = course_server.document_id
-                      LEFT JOIN moodle_doc_db.moodle_servers ON moodle_servers.id = course_server.server_id WHERE documents.id=".$ids;
+                      FROM moodle_doc_db.document
+                      LEFT JOIN moodle_doc_db.course_server ON document.id = course_server.document_id
+                      LEFT JOIN moodle_doc_db.moodle_servers ON moodle_servers.id = course_server.server_id WHERE document.id=".$ids;
             $result_1 = mysqli_query($dbc, $query_1) or die(mysqli_error($dbc));
 
 
@@ -499,7 +499,7 @@ function treeDir($id,$stat)
 
 
 
-    $query = "SELECT  documents.moodle_courseI_ID, toc.*  FROM toc JOIN documents ON toc.doc_id=documents.id WHERE toc.doc_id =".$id." ORDER BY toc.parent_id = 0 DESC, toc.sort_id ASC";
+    $query = "SELECT  document.moodle_courseI_ID, toc.*  FROM toc JOIN document ON toc.doc_id=document.id WHERE toc.doc_id =".$id." ORDER BY toc.parent_id = 0 DESC, toc.sort_id ASC";
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
     $objects = array();
