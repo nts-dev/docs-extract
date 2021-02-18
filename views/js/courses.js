@@ -18,6 +18,11 @@ document_ribbon = a.attachRibbon({
                     imgdis: "fa fa-external-link-square"
                 },
                 {type: "newLevel"},
+                {id: "restore", type: "button", text: "Restore", img: "fa fa-undo fa-3x", imgdis: "fa fa-undo fa-3x"},
+
+                {type: "newLevel"},
+                {id: "backup", type: "button", text: "Backup", img: "fa fa-repeat", imgdis: "fa fa-repeat"},
+                {type: "newLevel"},
                 {
                     id: "sort",
                     type: "button",
@@ -25,11 +30,6 @@ document_ribbon = a.attachRibbon({
                     img: "fa fa-sort-numeric-asc",
                     imgdis: "fa fa-sort-numeric-asc"
                 },
-                {type: "newLevel"},
-                {id: "backup", type: "button", text: "Backup", img: "fa fa-repeat", imgdis: "fa fa-repeat"},
-
-                {type: "newLevel"},
-                {id: "restore", type: "button", text: "Restore", img: "fa fa-undo fa-3x", imgdis: "fa fa-undo fa-3x"},
             ]
         },
     ]
