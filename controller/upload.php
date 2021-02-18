@@ -123,7 +123,7 @@ switch ($action) {
             }
         }
         catch (Exception $e){
-            echo json_encode(array('response' => false, 'text' =>$e ));
+            echo json_encode(array('response' => false, 'text' =>$e->getMessage()));
         }
 
         break;
