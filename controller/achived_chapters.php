@@ -72,7 +72,7 @@ switch ($action) {
 
     case 4:
 
-        $query = "SELECT  archived_toc.* ,documents.moodle_courseI_ID  FROM archived_toc JOIN documents ON documents.id= archived_toc.doc_id WHERE archived_toc.id IN (".implode(',',$id_arr).")";
+        $query = "SELECT  archived_toc.* ,document.moodle_courseI_ID  FROM archived_toc JOIN document ON document.id= archived_toc.doc_id WHERE archived_toc.id IN (".implode(',',$id_arr).")";
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
         $ispage = false;
         $isLesson = false;

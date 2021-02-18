@@ -71,7 +71,7 @@ switch ($action) {
     case 4:
 
         $ids = $_GET['id'];
-        $query = 'SELECT  toc.*,documents.moodle_courseI_ID  FROM toc JOIN documents ON documents.id=toc.doc_id WHERE toc.id ="' . $ids . '"';
+        $query = 'SELECT  toc.*,document.moodle_courseI_ID  FROM toc JOIN document ON document.id=toc.doc_id WHERE toc.id ="' . $ids . '"';
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
         $ispage = false;
         $isLesson = false;
@@ -448,19 +448,12 @@ switch ($action) {
         echo '<?xml version="1.0" ?>';
 
         echo '<complete>';
-        $count = 0;
         while ($row = mysqli_fetch_assoc($result)) {
-            if( $row["name"] == "education.nts.nl") {
+            if( $row["id"] == 3) {
                 echo '<option value="'.$row["id"].'" selected ="1" ><![CDATA['.$row["name"].']]></option>';
             }
             else {
-                if($count === 0) {
-                    echo '<option value="' . $row["id"] . '" selected ="1" ><![CDATA[' . $row["name"] . ']]></option>';
-                }
-                else {
-                    echo '<option value="' . $row["id"] . '"  ><![CDATA[' . $row["name"] . ']]></option>';
-                }
-               $count++;
+                echo '<option value="' . $row["id"] . '" ><![CDATA[' . $row["name"] . ']]></option>';
             }
         }
         echo '</complete>';
@@ -479,7 +472,7 @@ function treeDir($id,$stat)
 
 
 
-    $query = "SELECT  documents.moodle_courseI_ID, toc.*  FROM toc JOIN documents ON toc.doc_id=documents.id WHERE toc.doc_id =".$id." ORDER BY toc.parent_id = 0 DESC, toc.sort_id ASC";
+    $query = "SELECT  document.moodle_courseI_ID, toc.*  FROM toc JOIN document ON toc.doc_id=document.id WHERE toc.doc_id =".$id." ORDER BY toc.parent_id = 0 DESC, toc.sort_id ASC";
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
     $objects = array();

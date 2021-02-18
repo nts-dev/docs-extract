@@ -2,7 +2,6 @@
 header("Access-Control-Allow-Origin: *");
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 
-
 define('CREATE_COURSE', 1);
 define('CREATE_MODULES', 2);
 define('UPDATE_COURSE', 3);
@@ -12,7 +11,7 @@ define('CHECK_BOXES', 6);
 define('DELETE_MODULES', 13);
 define('ADD_MODULES', 14);
 
-include_once 'config.php';
+
 
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('display_errors', '1');
@@ -54,16 +53,7 @@ $domainname = $domain;//https://education.nts.nl'; //paste your domain here
 $wstoken = $token;//'d59c0678332d86f0e78e16d523acbe6e'; //here paste your enrol token
 $restformat = 'json';
 $doc_name = '';
-if (empty($domainname) && empty($wstoken)) {
-    $response = [
-        'response' => false,
-        'text' => 'Domain and Token Are Missing!',
-    ];
-    $responses[] = $response;
-    echo json_encode($responses);
-    return;
 
-}
 $moodle_ids = [];
 
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
@@ -72,9 +62,9 @@ function getToken($doc_id)
 {
     global $dbc;
     $query = "SELECT moodle_servers.path,moodle_servers.token
-              FROM documents
-              LEFT JOIN course_server ON documents.id = course_server.document_id
-              LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE documents.id=" . $doc_id;
+              FROM document
+              LEFT JOIN course_server ON document.id = course_server.document_id
+              LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE document.id=" . $doc_id;
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
     $token = '';
     $domain = '';
@@ -98,10 +88,10 @@ switch ($action) {
         $doc_url = filter_input(INPUT_POST, 'url');
         $details = filter_input(INPUT_POST, 'details');
 
-        $documents_query = "SELECT documents.doc_name,course_server.moodle_course_id,course_server.server_id,moodle_servers.name
-              FROM documents
-              LEFT JOIN course_server ON documents.id = course_server.document_id
-              LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE documents.id=" . $document_id;
+        $documents_query = "SELECT document.doc_name,course_server.moodle_course_id,course_server.server_id,moodle_servers.name
+              FROM document
+              LEFT JOIN course_server ON document.id = course_server.document_id
+              LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE document.id=" . $document_id;
 
         $documents_result = mysqli_query($dbc, $documents_query);
         $documents_num_rows = mysqli_num_rows($documents_result);
@@ -250,10 +240,10 @@ switch ($action) {
         $document_id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
 
 
-        $documents_query = "SELECT documents.doc_name,course_server.moodle_course_id,course_server.server_id
-              FROM documents
-              LEFT JOIN course_server ON documents.id = course_server.document_id
-              LEFT JOIN server ON server.id = course_server.server_id WHERE documents.id=" . $document_id;
+        $documents_query = "SELECT document.doc_name,course_server.moodle_course_id,course_server.server_id
+              FROM document
+              LEFT JOIN course_server ON document.id = course_server.document_id
+              LEFT JOIN server ON server.id = course_server.server_id WHERE document.id=" . $document_id;
         $documents_result = mysqli_query($dbc, $documents_query);
 
         $documents = mysqli_fetch_array($documents_result);
@@ -781,9 +771,6 @@ function addlessonpages($toAddLesson_ids)
     foreach ($toAddLesson_ids as $obj) {
 
         if ($obj->lesson_id != '') {
-
-            //echo $obj->lesson_id."=>".$obj->name;
-
             $lessonObject = [
                 'lessonid' => $obj->lesson_id,
                 'title' => $obj->name,
@@ -1168,7 +1155,7 @@ function createCourse($document_id)
         if ($domainname != "https://education.nts.nl") {
 
             $dateTime = date("d.m.Y") . " " . date("h:i:sa");
-            $query_insert_document = 'INSERT INTO documents (doc_name,document_url,local_course_id,date_time,details) VALUES ("' . $doc_name . '", "' . $doc_url . '", "' . $course_id . '", "' . $dateTime . '","' . $details . '")
+            $query_insert_document = 'INSERT INTO document (doc_name,document_url,local_course_id,date_time,details) VALUES ("' . $doc_name . '", "' . $doc_url . '", "' . $course_id . '", "' . $dateTime . '","' . $details . '")
     ON DUPLICATE KEY UPDATE local_course_id=values(local_course_id)';
 
             $result = mysqli_query($remoteDbc, $query_insert_document) or die(mysqli_error($remoteDbc));

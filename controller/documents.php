@@ -121,8 +121,7 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
                     $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $name;
                     if (file_exists($path))
                         xrmdir($path);
-
-                    $response = [
+                         $response = [
                         'response' => true,
                         'text' => 'Document Deleted!!',
                     ];
@@ -381,7 +380,6 @@ ON DUPLICATE KEY UPDATE content=values(content)';
 }
 function xrmdir($dir)
 {
-
     $items = scandir($dir);
     foreach ($items as $item) {
         if ($item === '.' || $item === '..') {

@@ -587,7 +587,10 @@ function deleteCourse(id, doc_name) {
         callback: function (ok) {
 
             if (ok) {
-
+                var localId = grid_1.cells(id, 2).getValue();
+                if(localId!=0|| localId!=''){
+                    doc_name = '';
+                }
                 $.get(baseURL + "controller/documents.php?action=5&id=" + id + "&doc_name=" + doc_name, function (data) {
 
                     if (data !== null) {

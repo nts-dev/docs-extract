@@ -465,7 +465,7 @@ function downloadImages($url, $docFolder, $imageCounter)
     $fp = fopen($docFolder ."/image" . $imageCounter . ".png", "w");
     fwrite($fp, $content);
     fclose($fp);
-    $strContent = str_replace($url, "http://" . $_SERVER["HTTP_HOST"] . "/CourseFiles/documentFiles/" .$docName ."/images/image" . $imageCounter . ".png", $strContent);
+    $strContent = str_replace($url, "/CourseFiles/documentFiles/" .$docName ."/images/image" . $imageCounter . ".png", $strContent);
 }
 function xrmdir($dir) {
     $items = scandir($dir);
@@ -489,7 +489,7 @@ function readGoogleDocHtml($path, $docFolder, $check)
 
     if ($files) {
         $contents = file_get_contents($files[0]);
-        $content = str_replace("images/image", "http://" . $_SERVER["HTTP_HOST"] . "/CourseFiles/documentFiles/" . $docFolder . "/images/image", $contents);
+        $content = str_replace("images/image", "/CourseFiles/documentFiles/" . $docFolder . "/images/image", $contents);
         //check if string contains user delimiters ie
         if (strpos($content, '<%') !== false && strpos($content, '%>') !== false) {
 
@@ -715,7 +715,7 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
     $docName = $docName[0];
 
     if ($reimport == 1) {
-        $query_update_document = 'UPDATE  documents  SET doc_name= "' . $docName . '", content="' . mysqli_real_escape_string($dbc, $content) . '", document_url ="' . $url . '"
+        $query_update_document = 'UPDATE  document  SET doc_name= "' . $docName . '", content="' . mysqli_real_escape_string($dbc, $content) . '", document_url ="' . $url . '"
     WHERE id=' . $doc_id;
 
         $result = mysqli_query($dbc, $query_update_document);
@@ -746,7 +746,7 @@ WHERE toc.doc_id= ' . $doc_id . ' ON DUPLICATE KEY UPDATE id=values(id),date_tim
 
     } else {
         $dateTime = date("d.m.Y") . " " . date("h:i:sa");
-        $query_insert_document = 'INSERT INTO documents (doc_name, content,document_url,date_time,details) VALUES ("' . $docName . '","' . mysqli_real_escape_string($dbc, $content) . '", "' . $url . '", "' . $dateTime . '", "' . $details . '")
+        $query_insert_document = 'INSERT INTO document (doc_name, content,document_url,date_time,details) VALUES ("' . $docName . '","' . mysqli_real_escape_string($dbc, $content) . '", "' . $url . '", "' . $dateTime . '", "' . $details . '")
     ON DUPLICATE KEY UPDATE content=values(content)';
 
         $result = mysqli_query($dbc, $query_insert_document) or die(mysqli_error($dbc));
