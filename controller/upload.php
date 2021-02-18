@@ -2,7 +2,7 @@
 
 ini_set('display_errors', '1');
 header("Access-Control-Allow-Origin: *");
-ini_set('max_execution_time', 1000);
+ini_set('max_execution_time', 0);
 include 'config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
@@ -900,7 +900,6 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
                 $parent_id = mysqli_insert_id($dbc);
                 $counter_l2 = 0;
                 $qid1 = $parent_id;
-
 
             } else if (strpos($key, '</h2>') !== false) {
                 $counter_l2++;
