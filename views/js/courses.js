@@ -8,9 +8,7 @@ document_ribbon = a.attachRibbon({
                 {type: "newLevel"},
                 {id: "delete", type: "button", text: "Delete", img: "fa fa-trash", imgdis: "fa fa-trash"},
                 {type: "newLevel"},
-                {id: "restore", type: "button", text: "Restore", img: "fa fa-undo fa-3x", imgdis: "fa fa-undo fa-3x"},
-                {type: "newLevel"},
-                {id: "backup", type: "button", text: "Backup", img: "fa fa-repeat", imgdis: "fa fa-repeat"},
+                {id: "update_document", type: "button", text: "Update", img: "fa fa-edit", imgdis: "fa fa-edit",},
                 {type: "newLevel"},
                 {
                     id: "export",
@@ -28,7 +26,10 @@ document_ribbon = a.attachRibbon({
                     imgdis: "fa fa-sort-numeric-asc"
                 },
                 {type: "newLevel"},
-                {id: "update_document", type: "button", text: "Update", img: "fa fa-edit", imgdis: "fa fa-edit",}
+                {id: "backup", type: "button", text: "Backup", img: "fa fa-repeat", imgdis: "fa fa-repeat"},
+
+                {type: "newLevel"},
+                {id: "restore", type: "button", text: "Restore", img: "fa fa-undo fa-3x", imgdis: "fa fa-undo fa-3x"},
             ]
         },
     ]
@@ -279,7 +280,7 @@ function openUploadWindow(reimport, doc_id) {
     combo_server.load(baseURL + "controller/chapters.php?action=14&id=" + doc_id, function () {
         server_id = combo_server.getSelectedValue();
         window_4.progressOff();
-        if(!server_id){
+        if (!server_id) {
             dhtmlx.alert({
                 title: 'Error',
                 expire: 2000,
@@ -287,7 +288,7 @@ function openUploadWindow(reimport, doc_id) {
             });
         }
         var myUploader = form_2.getUploader("myFiles");
-        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id+"&server="+server_id);
+        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id);
     });
 
     form_2.attachEvent("onUploadComplete", function (count) {
@@ -347,7 +348,7 @@ function openUploadWindow(reimport, doc_id) {
 
                             grid_2.expandAll();
                             grid_archive.expandAll();
-                            dhtmlx.message({title: 'Success',expire: 2000,text: data.text});
+                            dhtmlx.message({title: 'Success', expire: 2000, text: data.text});
                             window_4.progressOff();
                             window_4.close();
                         } else {
@@ -521,7 +522,7 @@ function exportToMoodle(doc_id) {
                 } else {
                     dhtmlx.message({title: 'Success', expire: 3000, text: data[item].text});
 
-                    if(data[item].course_id) {
+                    if (data[item].course_id) {
                         addingCourse(doc_id, data[item].course_id)
                     }
                 }
@@ -540,10 +541,9 @@ function addingCourse(doc_id, course_id) {
     $.get(baseURL + "controller/export_moodle.php?action=2&course_id=" + course_id + "&id=" + doc_id, function (data) {
         main_layout.progressOff();
         for (var item in data) {
-            if(data[item].response){
-                dhtmlx.message({title: 'Success',expire: 6000,text: data[item].text});
-            }
-            else {
+            if (data[item].response) {
+                dhtmlx.message({title: 'Success', expire: 6000, text: data[item].text});
+            } else {
                 dhtmlx.alert({title: 'Error!', text: data[item].text});
             }
         }
@@ -588,7 +588,7 @@ function deleteCourse(id, doc_name) {
 
             if (ok) {
                 var localId = grid_1.cells(id, 2).getValue();
-                if(localId!=0|| localId!=''){
+                if (localId != 0 || localId != '') {
                     doc_name = '';
                 }
                 $.get(baseURL + "controller/documents.php?action=5&id=" + id + "&doc_name=" + doc_name, function (data) {
