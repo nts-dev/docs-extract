@@ -152,7 +152,6 @@ switch ($action) {
 
             $fileId = explode("/", $fileId);
             $fileId = $fileId[0];
-
             $client = getClient();
 
             $docName = getDocumentName($client, $fileId);
@@ -161,30 +160,23 @@ switch ($action) {
                 $content = getContent($client, $fileId);
 
             if ($content) {
-
-
                 $check = readGoogleDocUrl($content);
-
                 if (!$checkSections)
                     echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
 
                 if ($reimport == 1) {
-
-
                     if (deleteNonUpdate())
                         if (bChanged())
                             if (bInsert())
                                 if (bUpdate())
                                     bDelete();
-
-
                 }
 
             }
 
         }
         catch (Exception $e){
-            echo json_encode(array('response' => false, 'text' =>$e ));
+            echo json_encode(array('response' => false, 'text' =>$e->getMessage() ));
         }
         break;
     default:
