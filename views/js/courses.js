@@ -275,7 +275,7 @@ function openUploadWindow(reimport, doc_id) {
 
         }, "json");
     }
-    course_form
+
     combo_server.load(baseURL + "controller/chapters.php?action=14&id=" + doc_id, function () {
         server_id = combo_server.getSelectedValue();
         window_4.progressOff();

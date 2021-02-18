@@ -9,9 +9,9 @@ switch ($action) {
 
     case 1:
 
-        $query = "SELECT documents.id,documents.doc_name, moodle_servers.name,documents.document_url,documents.local_course_id
-FROM documents
-left JOIN course_server ON documents.id = course_server.document_id
+        $query = "SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
+FROM document
+left JOIN course_server ON document.id = course_server.document_id
 LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc";
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
         header('Content-type:text/xml;charset=ISO-8859-1;');
@@ -47,7 +47,7 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
 
     case 2:
         $id = $_GET['id'];
-        $query = "SELECT content FROM documents WHERE id=" . $id;
+        $query = "SELECT content FROM document WHERE id=" . $id;
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($row = mysqli_fetch_assoc($result)) {
@@ -94,19 +94,19 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
         $name = $_GET['doc_name'];
 
         $query_quiz = "Delete question, question_Page, choices
-                    FROM documents documents
-                     JOIN toc ON documents.id = toc.doc_id
+                    FROM document document
+                     JOIN toc ON document.id = toc.doc_id
                      JOIN project_course_question_to_page
                      question_Page ON
                      question_Page.page_id = toc.id
                     JOIN project_course_question question ON question.id = question_Page.question_id
                      left JOIN project_course_choices choices ON choices.question_id=question.id
-                        WHERE documents.id =" . $id;
+                        WHERE document.id =" . $id;
         $result_quiz = mysqli_query($dbc, $query_quiz) or die(mysqli_error($dbc));
 
         if ($result_quiz) {
 
-            $query = "DELETE  documents, toc FROM documents  INNER JOIN toc ON documents.id=toc.doc_id  WHERE documents.id =" . $id;
+            $query = "DELETE  document, toc FROM document  INNER JOIN toc ON document.id=toc.doc_id  WHERE document.id =" . $id;
             $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
             if ($result) {
@@ -115,7 +115,7 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
 
                 if ($result) {
 
-                    $query = "DELETE FROM documents WHERE id  =" . $id;
+                    $query = "DELETE FROM document WHERE id  =" . $id;
                     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
                     //delete course files
                     $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $name;
@@ -167,7 +167,7 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
             $html .= '</body></html>';
 
             if ($docName != "" && $html != "") {
-                $query_insert_document = 'INSERT INTO documents (doc_name, content) VALUES ("' . $docName . '","' . mysqli_real_escape_string($dbc, $html) . '")
+                $query_insert_document = 'INSERT INTO document (doc_name, content) VALUES ("' . $docName . '","' . mysqli_real_escape_string($dbc, $html) . '")
 ON DUPLICATE KEY UPDATE content=values(content)';
 
                 $result = mysqli_query($dbc, $query_insert_document) or die(mysqli_error($dbc));
@@ -351,12 +351,12 @@ ON DUPLICATE KEY UPDATE content=values(content)';
     case 14:
         $id = $_GET['id'];
 
-        $query = "SELECT documents.doc_name, moodle_servers.name,documents.document_url,
-                    documents.local_course_id,documents.details,documents.date_time,documents.emp_id
-                           FROM documents
-                            LEFT JOIN course_server ON documents.id = course_server.document_id
+        $query = "SELECT document.doc_name, moodle_servers.name,document.document_url,
+                    document.local_course_id,document.details,document.date_time,document.emp_id
+                           FROM document
+                            LEFT JOIN course_server ON document.id = course_server.document_id
                             LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id
-                            WHERE documents.id=" . $id;
+                            WHERE document.id=" . $id;
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($row = mysqli_fetch_assoc($result)) {
