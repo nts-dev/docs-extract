@@ -11,7 +11,7 @@ define('CHECK_BOXES', 6);
 define('DELETE_MODULES', 13);
 define('ADD_MODULES', 14);
 
-
+include_once 'config.php';
 
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('display_errors', '1');
