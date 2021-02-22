@@ -1,6 +1,6 @@
 <?php
 
-ini_set('display_errors', '1');
+ini_set('display_errors', '0');
 header("Access-Control-Allow-Origin: *");
 ini_set('max_execution_time', 1000);
 include 'config.php';
@@ -710,7 +710,7 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
     global $server;
     global $details;
 
-
+    mysqli_query($dbc, "set global max_allowed_packet = 1024M")or die(mysqli_error($dbc));
     $docName = explode("(", $docName);
     $docName = $docName[0];
 
@@ -724,7 +724,6 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
         if (!$result) {
 
             print_r("{state: false, name:'" . str_replace("'", "\\'", "Problem") . "', extra: {info: ' '}}");
-
             return;
         }
 
@@ -888,7 +887,10 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
         $section = $section[0];
         if ($section) {
 
+            mysqli_query($dbc, "set global max_allowed_packet = 1024M")or die(mysqli_error($dbc));
+
             if (strpos($key, '</h1>') !== false) {
+
 
                 $parent_id = 0;
                 $counter_l1++;
