@@ -245,7 +245,7 @@ function getDocumentName($client, $fileId)
     $doc = $service->documents->get($fileId);
 
 
-    return $doc->getTitle();;
+    return $doc->getTitle();
 
 }
 
