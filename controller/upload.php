@@ -2,7 +2,7 @@
 
 ini_set('display_errors', '0');
 header("Access-Control-Allow-Origin: *");
-ini_set('max_execution_time', 1000);
+ini_set('max_execution_time', 0);
 include 'config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
@@ -123,7 +123,7 @@ switch ($action) {
             }
         }
         catch (Exception $e){
-            echo json_encode(array('response' => false, 'text' =>$e ));
+            echo json_encode(array('response' => false, 'text' =>$e->getMessage()));
         }
 
         break;
@@ -152,7 +152,6 @@ switch ($action) {
 
             $fileId = explode("/", $fileId);
             $fileId = $fileId[0];
-
             $client = getClient();
 
             $docName = getDocumentName($client, $fileId);
@@ -161,30 +160,23 @@ switch ($action) {
                 $content = getContent($client, $fileId);
 
             if ($content) {
-
-
                 $check = readGoogleDocUrl($content);
-
                 if (!$checkSections)
                     echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
 
                 if ($reimport == 1) {
-
-
                     if (deleteNonUpdate())
                         if (bChanged())
                             if (bInsert())
                                 if (bUpdate())
                                     bDelete();
-
-
                 }
 
             }
 
         }
         catch (Exception $e){
-            echo json_encode(array('response' => false, 'text' =>$e ));
+            echo json_encode(array('response' => false, 'text' =>$e->getMessage() ));
         }
         break;
     default:
@@ -902,7 +894,6 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
                 $parent_id = mysqli_insert_id($dbc);
                 $counter_l2 = 0;
                 $qid1 = $parent_id;
-
 
             } else if (strpos($key, '</h2>') !== false) {
                 $counter_l2++;

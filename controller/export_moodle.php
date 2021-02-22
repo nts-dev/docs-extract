@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
-
+ini_set('max_execution_time', 0);
 define('CREATE_COURSE', 1);
 define('CREATE_MODULES', 2);
 define('UPDATE_COURSE', 3);
@@ -16,6 +16,12 @@ include_once 'config.php';
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('display_errors', '1');
 require_once 'curl.php';
+
+//checking if script is in secured server
+if ($_SERVER['HTTPS'])
+    $http = 'https://';
+else
+    $http = 'http://';
 $responses = [];
 $responsesModules = [];
 $updateModules = [];
@@ -350,7 +356,7 @@ switch ($action) {
 
 function addModulePageLessonSection($ids, $doc_id)
 {
-    global $dbc, $updateModules;
+    global $dbc, $updateModules,$http;
     $query = "SELECT  toc.* ,course_server.moodle_course_id  FROM toc  JOIN course_server ON course_server.document_id = toc.doc_id WHERE toc.id IN (" . implode(',', $ids) . ") ORDER BY sort_id ASC ";
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
     $module_id = 0;
@@ -377,7 +383,8 @@ function addModulePageLessonSection($ids, $doc_id)
         $parent_id = $row['parent_id'];
         $id = $row['id'];
         $name = $row['chapter_id'] . " " . $row['chapter'];
-        $content = $row["uppercss"] . $row["content"] . $row["lowercss"];
+        $content = str_replace("/CourseFiles/documentFiles/", $http.$_SERVER['SERVER_NAME'] . "/CourseFiles/documentFiles/", $row['content']);
+        $content = $row["uppercss"] . $content. $row["lowercss"];
         $moodle_id = $row['moodle_id'];
         $module_id = $row['module_id'];
         $lesson = $row['lesson_id'];
@@ -1184,7 +1191,7 @@ function createCourse($document_id)
 function createObjects($id)
 {
 
-    global $dbc;
+    global $dbc,$http;
     $response = true;
 
     $query = "SELECT * FROM toc WHERE doc_id =" . $id . " ORDER BY parent_id = 0 DESC, id ASC";
@@ -1203,8 +1210,9 @@ function createObjects($id)
         $obj->name = $row['chapter'];
         $obj->chapter_id = $row['chapter_id'];
         $obj->parent_id = $row['parent_id'];
-        $obj->content = $row['uppercss'] . $row['content'] . $row['lowercss'];
-        $obj->raw_content = $row['content'];
+        $content = str_replace("/CourseFiles/documentFiles/", $http.$_SERVER['SERVER_NAME'] . "/CourseFiles/documentFiles/", $row['content'] );
+        $obj->content = $row['uppercss'] . $content . $row['lowercss'];
+        $obj->raw_content = $content;
 
         if ($row['parent_id'] == 0) {
             $roots[] = $obj;
