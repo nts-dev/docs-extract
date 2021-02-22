@@ -278,12 +278,12 @@ switch ($action) {
         break;
 
 
-    case EXPORT_COURSE:
-        $document_id = filter_input(INPUT_POST, 'doc_id');
-
-        $response = addCourse($document_id);
-        echo json_encode($response);
-        break;
+//    case EXPORT_COURSE:
+//        $document_id = filter_input(INPUT_POST, 'doc_id');
+//
+//        $response = addCourse($document_id);
+//        echo json_encode($response);
+//        break;
 
 
     case DELETE_MODULES:

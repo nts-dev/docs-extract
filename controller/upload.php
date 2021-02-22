@@ -707,7 +707,7 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
     global $server;
     global $details;
 
-   mysqli_query($dbc, 'set global max_allowed_packet = 1677721600')or die(mysqli_error($dbc));
+   mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 500 * 1024 * 1024)or die(mysqli_error($dbc));
 
     $docName = explode("(", $docName);
     $docName = $docName[0];
