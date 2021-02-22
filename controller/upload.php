@@ -434,7 +434,9 @@ global $strContent,$reimport;
     }
     $imageCounter = 0;
     foreach ($imagesArray as $image) {
-      downloadImages($image, $docFolder, $imageCounter++);
+        if($image) {
+            downloadImages($image, $docFolder, $imageCounter++);
+        }
     }
     readUrlHeaders($strContent);
 }
@@ -453,7 +455,10 @@ function getImages($content)
 function downloadImages($url, $docFolder, $imageCounter)
 {
     global $strContent,$docName;
-    $content = file_get_contents($url);
+    $opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
+    $context = stream_context_create($opts);
+    $content = file_get_contents($url,false,$context);
+
     $fp = fopen($docFolder ."/image" . $imageCounter . ".png", "w");
     fwrite($fp, $content);
     fclose($fp);
@@ -702,7 +707,8 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
     global $server;
     global $details;
 
-    mysqli_query($dbc, "set global max_allowed_packet = 1024M")or die(mysqli_error($dbc));
+   mysqli_query($dbc, 'set global max_allowed_packet = 1073741824')or die(mysqli_error($dbc));
+
     $docName = explode("(", $docName);
     $docName = $docName[0];
 
