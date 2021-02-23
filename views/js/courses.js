@@ -527,7 +527,7 @@ function exportToMoodle(doc_id) {
                     }
                 }
             } else {
-                dhtmlx.alert({title: 'Error!', text: data[item].text});
+                dhtmlx.alert({title: data[item].errorMessage, text: data[item].text});
             }
         }
 
