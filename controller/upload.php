@@ -44,6 +44,7 @@ switch ($action) {
             $reimport = filter_input(INPUT_GET, 'reimport');
             $doc_id = filter_input(INPUT_GET, 'doc_id');
             $server = filter_input(INPUT_GET, 'server', FILTER_SANITIZE_NUMBER_INT);
+            $user_id = filter_input(INPUT_GET, 'user_id', FILTER_SANITIZE_NUMBER_INT);
 
             if ($_FILES["file"]["name"]) {
                 $filename = $_FILES["file"]["name"];
@@ -137,6 +138,7 @@ switch ($action) {
             $details = filter_input(INPUT_POST, 'details');
 
             $server = filter_input(INPUT_POST, 'server', FILTER_SANITIZE_NUMBER_INT);
+            $user_id = filter_input(INPUT_POST, 'user_id', FILTER_SANITIZE_NUMBER_INT);
             $url = $fileId;
             $fileId = explode("d/", $fileId);
 
@@ -706,6 +708,7 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
     global $url;
     global $server;
     global $details;
+    global $user_id;
 
    mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 500 * 1024 * 1024)or die(mysqli_error($dbc));
 
@@ -743,7 +746,8 @@ WHERE toc.doc_id= ' . $doc_id . ' ON DUPLICATE KEY UPDATE id=values(id),date_tim
 
     } else {
         $dateTime = date("d.m.Y") . " " . date("h:i:sa");
-        $query_insert_document = 'INSERT INTO document (doc_name, content,document_url,date_time,details) VALUES ("' . $docName . '","' . mysqli_real_escape_string($dbc, $content) . '", "' . $url . '", "' . $dateTime . '", "' . $details . '")
+
+        $query_insert_document = 'INSERT INTO document (doc_name, content,document_url,date_time,emp_id,details) VALUES ("' . $docName . '","' . mysqli_real_escape_string($dbc, $content) . '", "' . $url . '", "' . $dateTime . '", "' . $user_id . '", "' . $details . '")
     ON DUPLICATE KEY UPDATE content=values(content)';
 
         $result = mysqli_query($dbc, $query_insert_document) or die(mysqli_error($dbc));
