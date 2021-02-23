@@ -66,7 +66,7 @@ if (checkFile($moosh) || checkFile($data_content)) {
     $response = [
         'response' => false,
         'errorMessage' => "Missing Resource!",
-        'text' => "Ensure to install moosh on your moodle server and add moosh and data_content files in order to export!" . $data_content
+        'text' => "Ensure to install moosh and add moosh.php and data_content.php files on your moodle server in order to export!"
     ];
     $responses[] = $response;
     echo json_encode($responses);
