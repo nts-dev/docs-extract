@@ -2,6 +2,7 @@
 header("Access-Control-Allow-Origin: *");
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('max_execution_time', 0);
+ini_set('memory_limit', '3024M');
 define('CREATE_COURSE', 1);
 define('CREATE_MODULES', 2);
 define('UPDATE_COURSE', 3);
@@ -10,7 +11,8 @@ define('ADD_COURSE', 5);
 define('CHECK_BOXES', 6);
 define('DELETE_MODULES', 13);
 define('ADD_MODULES', 14);
-
+define('TEST', 15);
+libxml_use_internal_errors(true);
 include_once 'config.php';
 
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
@@ -25,6 +27,7 @@ else
 $responses = [];
 $responsesModules = [];
 $updateModules = [];
+$counter = 0;
 //create connection to remote
 $remoteDbc = @mysqli_connect('83.98.243.187', 'root', 'kenya1234', 'moodle_doc_db');
 if (!$remoteDbc) {
@@ -365,9 +368,7 @@ switch ($action) {
         if (!empty($id_arr)) {
             deleteModules($id_arr);
         }
-
         updateArchivedToc($doc_id);
-
         echo json_encode($updateModules);
 
         break;
@@ -378,6 +379,16 @@ switch ($action) {
         $doc_name = $name;
         $response = addCourse($doc_id);
         echo json_encode($response);
+
+        break;
+
+    case TEST;
+        $page_id = filter_input(INPUT_POST, 'page_id');
+        $module_id = filter_input(INPUT_POST, 'module_id');
+        $image_name = filter_input(INPUT_POST, 'image_name');
+        $link = filter_input(INPUT_POST, 'link');
+
+        echo replaceLinks($page_id, $module_id, $image_name, $link, false);
 
         break;
     default:
@@ -414,7 +425,8 @@ function addModulePageLessonSection($ids, $doc_id)
         $parent_id = $row['parent_id'];
         $id = $row['id'];
         $name = $row['chapter_id'] . " " . $row['chapter'];
-        $content = str_replace("/CourseFiles/documentFiles/", $http . $_SERVER['SERVER_NAME'] . "/CourseFiles/documentFiles/", $row['content']);
+        $content = str_replace("/CourseFiles/documentFiles/", $_SERVER['DOCUMENT_ROOT'] . "/CourseFiles/documentFiles/", $row['content']);
+
         $content = $row["uppercss"] . $content . $row["lowercss"];
         $moodle_id = $row['moodle_id'];
         $module_id = $row['module_id'];
@@ -442,9 +454,9 @@ function addModulePageLessonSection($ids, $doc_id)
 
                     updateTopicName($Mdl_section_id, $sectionname, $moodle_id, $id, true);
 
-                    UpdatePage($moodle_id, $content, $sectionname);
+                    //UpdatePage($moodle_id, $content, $sectionname,$module_id);
 
-                    UpdatePageNameContent($moodle_id, $name, $content);
+                    UpdatePageNameContent($moodle_id, $name, $content, $moodle_id);
                 }
 
 
@@ -455,7 +467,9 @@ function addModulePageLessonSection($ids, $doc_id)
 
                 if ($row['bUpdate'] > 0 || $row['bChanged'] > 0) {
                     UpdateLesson($lesson, $name, $course_id);
-                    UpdateLessonPage($moodle_id, $content, $name, true);
+
+                    UpdateLessonPage($moodle_id, $content, $name, true, $module_id);
+
                     UpdateLessonPageName($moodle_id, $name, $course_id, true);
                 }
                 updateMoodle_idonInsert($moodle_id, $lesson, $id, $module_id);
@@ -463,7 +477,7 @@ function addModulePageLessonSection($ids, $doc_id)
             if ($islessonPage) {
 
                 if ($row['bUpdate'])
-                    UpdateLessonPage($moodle_id, $content, $name, false);
+                    UpdateLessonPage($moodle_id, $content, $name, false, $module_id);
 
                 if ($row['bChanged'] > 0) {
                     UpdateLessonPageName($moodle_id, $name, $course_id, false);
@@ -875,10 +889,8 @@ function deleteModules($id_arr)
             if ($page)
                 deleteSection($sectionid, $course_id);
 
-
         }
         if ($ispage) {
-
 
             // echo json_encode($response);
         }
@@ -913,12 +925,8 @@ function addToArchive($doc_id)
 
     global $dbc;
     $query_delete_prev = 'DELETE FROM archived_toc WHERE doc_id=' . $doc_id;
-
     $result = mysqli_query($dbc, $query_delete_prev) or die(mysqli_error($dbc));
-
-
     if ($result) {
-
         $export_query = 'INSERT INTO archived_toc
                         (id,doc_id,sort_id,doc_name,date_time,chapter_id,chapter,parent_id,content,`type`,charVal,level_id,uppercss,lowercss,moodle_id,binsert,bUpdate,bDelete,bContent_update,bChanged,toUpdate)
                         SELECT id,doc_id,sort_id,doc_name,date_time,chapter_id,chapter,parent_id,content,`type`,charVal,level_id,uppercss,lowercss,moodle_id,binsert,bUpdate,bDelete,bContent_update,bChanged,toUpdate FROM toc
@@ -1224,7 +1232,6 @@ function createCourse($document_id)
 
 function createObjects($id)
 {
-
     global $dbc, $http;
     $response = true;
 
@@ -1244,7 +1251,9 @@ function createObjects($id)
         $obj->name = $row['chapter'];
         $obj->chapter_id = $row['chapter_id'];
         $obj->parent_id = $row['parent_id'];
-        $content = str_replace("/CourseFiles/documentFiles/", $http . $_SERVER['SERVER_NAME'] . "/CourseFiles/documentFiles/", $row['content']);
+        $content = str_replace("/CourseFiles/documentFiles/", $_SERVER['DOCUMENT_ROOT'] . "/CourseFiles/documentFiles/", $row['content']);
+        //$content = getImageSource($content);
+
         $obj->content = $row['uppercss'] . $content . $row['lowercss'];
         $obj->raw_content = $content;
 
@@ -1267,24 +1276,176 @@ function createObjects($id)
     return $response;
 }
 
+function getImageSource($Content, $module_id, $page_id, $isPage)
+{
+    global $counter;
+    if (!empty($Content)) {
+        $doc = new DOMDocument();
+        $doc->loadHTML($Content);
+        $tags = $doc->getElementsByTagName('img');
+        foreach ($tags as $tag) {
+//            echo "<pre>";
+//            print_r($tag->attributes);
+            $old_src = $tag->getAttribute('src');
+            $filename = 'images' . $counter . '.jpg';
+            if ($filename) {
+                // echo $old_src;
+                $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
+                $Content = str_replace($old_src, $new_src_url, $Content);
+
+            }
+            $counter++;
+        }
+        return $Content;
+    }
+}
+
+
+function getAudioSource($Content, $module_id, $page_id, $isPage)
+{
+    global $counter;
+    if (!empty($Content)) {
+        $doc = new DOMDocument();
+        $doc->loadHTML($Content);
+        $tags = $doc->getElementsByTagName('a');
+        foreach ($tags as $tag) {
+            $old_src = $tag->getAttribute('href');
+            $filename = explode('/', $old_src);
+            $filename = end($filename);
+            $toremove = $old_src;
+            $old_src = str_replace('../..', '', $old_src);
+            $linkText = $tag->nodeValue;
+            if ($linkText != 'Audio Here') {
+                continue;
+            }
+            if (strlen(trim($old_src)) == 0) {
+                continue;
+            }
+            if ($old_src[0] == '#') {
+                continue;
+            }
+            if ($filename) {
+                $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
+                $toAdd = " <audio controls='true'><source src='" . $new_src_url . "'></audio></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+                //$Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
+                $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
+                $Content = str_replace('Audio Here', '', $Content);
+
+            }
+            $counter++;
+        }
+        return $Content;
+
+
+    }
+}
+
+function getVideoSource($Content, $module_id, $page_id, $isPage)
+{
+    global $counter;
+    if (!empty($Content)) {
+        $doc = new DOMDocument();
+        $doc->loadHTML($Content);
+        $tags = $doc->getElementsByTagName('a');
+
+        foreach ($tags as $tag) {
+            $old_src = $tag->getAttribute('href');
+            $filename = explode('/', $old_src);
+            $filename = end($filename);
+            $toremove = $old_src;
+            $old_src = str_replace('../..', '', $old_src);
+            //  $filename ='video'.$counter.'.mp4';
+            $linkText = $tag->nodeValue;
+            if ($linkText != 'Video Here') {
+                continue;
+            }
+
+            if ($filename) {
+                $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
+                $toAdd = " <video controls='true'><source src='" . $new_src_url . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+               // $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
+              $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
+                $Content = str_replace('Video Here', '', $Content);
+
+            }
+            $counter++;
+        }
+        return $Content;
+    }
+}
+
+function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
+{
+    global $domainname;
+    $count = 0;
+    $opts = array('http' => array('header' => "User-Agent:MyAgent/1.0\r\n"));
+    $context = stream_context_create($opts);
+    $file = explode('.', $image_name);
+    $file = end($file);
+    $image_content = file_get_contents($link, false, $context);
+    $obj = [
+        'page_id' => $page_id,
+        'module_id' => $module_id,
+        'image_name' => $image_name,
+        'image_content' => $image_content,
+        'isPage' => $isPage
+    ];
+    $curl = new curl;
+    $serverurl = $domainname . "/moosh.php?action=11";
+    $resp = $curl->post($serverurl, $obj);
+    $res = json_decode($resp);
+
+       return $res->image;
+}
+
+function uploadToMoodle($filename, $old_src)
+{
+    global $domainname, $wstoken;
+    //$restformat = 'json';
+    $wsfunctionname = 'core_files_upload';
+    $opts = array('http' => array('header' => "User-Agent:MyAgent/1.0\r\n"));
+    $context = stream_context_create($opts);
+    $params = array(
+        'filename' => $filename,
+        'filecontent' => base64_encode(file_get_contents($old_src, false, $context)),
+        'contextlevel' => "user",
+        'instanceid' => 22,
+        'component' => "user",
+        'filearea' => "draft",
+        'itemid' => 5,
+        'filepath' => "/",
+        'contextid' => 1305
+    );
+    $serverurl = $domainname . "/webservice/rest/server.php?wstoken=" . $wstoken . "&wsfunction=" . $wsfunctionname;
+    $curl = new curl;
+    //$restformat = ($restformat == 'json') ? '&moodlewsrestformat=' . $restformat : '';
+    $restformat = '&moodlewsrestformat=json';
+    $respLink = $curl->post($serverurl . $restformat, $params);
+
+    $response = json_decode($respLink);
+    // echo $response->url;
+    return $response->url;
+
+}
+
 function printXML(stdClass $obj, $isRoot = false)
 {
 
     global $section_id, $course_id, $section_name, $response, $moodle_ids;
-
+    $data = $obj->content;
     $dataObject = [
         'page_name' => $obj->chapter_id . " " . $obj->name,
         'section_id' => $section_id,
         'parent_id' => $obj->parent_id,
-        'content' => $obj->content,
+        'content' => $data,
         'course_id' => $course_id,
         'id' => $obj->id
     ];
 
     if ($isRoot) {
-
         $section_name = $obj->chapter_id . ' ' . $obj->name;
-        $response = createPage($obj->id, $dataObject, $section_name);
+
+        $response = createPage($obj->id, $dataObject, $section_name, $data);
 
         foreach ($obj->children as $child) {
             printXML($child, false);
@@ -1294,15 +1455,20 @@ function printXML(stdClass $obj, $isRoot = false)
 
         list($lessonid, $module_id) = createLesson($obj->id, $dataObject, false);
         $has_children = count($obj->children) > 0;
+        $content = $obj->content;
+        $name = $obj->chapter_id . " " . $obj->name;
+        //$Content = getImageSource($obj->content,$module_id,33,false);
         $lessondataObject = [
-            'title' => $obj->chapter_id . " " . $obj->name,
+            'title' => $name,
             'lessonid' => $lessonid,
-            'contents' => $obj->content,
+            'contents' => $content,
 
         ];
         $lessonPageId = insertLessonPage($lessondataObject, $lessonid, $module_id);
 
         if ($lessonPageId > 0) {
+
+            UpdateLessonPage($lessonPageId, $content, $name, true, $module_id);
 
             $moodle_object = new stdClass;
             $moodle_object->id = $obj->id;
@@ -1318,6 +1484,7 @@ function printXML(stdClass $obj, $isRoot = false)
             if ($lessonid) {
 
                 foreach ($obj->children as $child) {
+
                     createLessonPage($child, $lessonid, $module_id);
                 }
             }
@@ -1328,7 +1495,7 @@ function printXML(stdClass $obj, $isRoot = false)
     return $response;
 }
 
-function createPage($id, $obj, $name)
+function createPage($id, $obj, $name, $data)
 {
 
     global $domainname, $wstoken, $dbc, $responsesModules;
@@ -1337,14 +1504,12 @@ function createPage($id, $obj, $name)
     $resp = $curl->post($serverurl, $obj);
     $pagedata = json_decode($resp);
 
+    UpdatePage($pagedata->page_id, $data, $name, $pagedata->section);
 
     if ($pagedata->is_section) {
         updateTopicName($pagedata->section, $name, $pagedata->page_id, $id, false);
-
         $response = ['response' => true, 'text' => $name . " Added successfully",];
         $responsesModules[] = $response;
-
-
     }
 
     return false;
@@ -1359,6 +1524,7 @@ function insertPage($obj, $name, $id)
     $resp = $curl->post($serverurl, $obj);
     $pagedata = json_decode($resp);
 
+    UpdatePage($pagedata->page_id, $obj->content, $name, $pagedata->section);
     if ($pagedata->is_section) {
 
 
@@ -1370,7 +1536,6 @@ function insertPage($obj, $name, $id)
 
 function createLesson($id, $obj, $checked)
 {
-
 
     global $domainname, $moodle_ids;
     $curl = new curl;
@@ -1430,21 +1595,25 @@ function insertLessonPage($obj, $id)
     return $res->data->response;
 }
 
+
 function createLessonPage(stdClass $obj, $lessonid, $module_id)
 {
-
     global $domainname, $moodle_ids;
-
+    $content = $obj->content;
+    $name = $obj->chapter_id . ' ' . $obj->name;
+    //  $Content = getImageSource($obj->content,$module_id,33, false);
     $pageObject = [
         'lessonid' => $lessonid,
         'title' => $obj->chapter_id . ' ' . $obj->name,
-        'contents' => $obj->content,
+        'contents' => $content,
     ];
-
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=5";
     $resp = $curl->post($serverurl, $pageObject);
     $res = json_decode($resp);
+
+
+    UpdateLessonPage($res->data->response, $content, $name, true, $module_id);
 
     $moodle_object = new stdClass;
     $moodle_object->id = $obj->id;
@@ -1602,17 +1771,25 @@ function restoreCourse($course_id, $name)
     return $course_stat;
 }
 
-function UpdatePage($pageid, $pageContent, $sectionname)
+function UpdatePage($pageid, $pageContent, $sectionname, $module_id)
 {
 
     global $domainname, $wstoken, $updateModules;
 
+
+    if ($pageid)
+        $Content = getImageSource($pageContent, $pageid, $pageid, true);
+
+    if (!empty($Content))
+        $Content = getAudioSource($Content, $module_id, $pageid, true);
+
+    if (!empty($Content))
+        $Content = getVideoSource($Content, $module_id, $pageid, true);
+
     $courseObject = [
         'page_id' => $pageid,
-        'content' => $pageContent,
-
+        'content' => $Content,
     ];
-
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=7";
     $pageData = $curl->post($serverurl, $courseObject);
@@ -1639,13 +1816,22 @@ function UpdatePage($pageid, $pageContent, $sectionname)
 
 }
 
-function UpdatePageNameContent($pageid, $name, $content)
+function UpdatePageNameContent($pageid, $name, $content, $module_id)
 {
+
+    $Content = getImageSource($content, $module_id, 33, true);
+    if (!empty($Content))
+        $Content = getAudioSource($Content, $module_id, $pageid, true);
+
+    if (!empty($Content))
+        $Content = getVideoSource($Content, $module_id, $pageid, true);
+
+
     global $domainname, $wstoken, $updateModules;
     $courseObject = [
         'page_id' => $pageid,
         'name' => $name,
-        'content' => $content,
+        'content' => $Content,
     ];
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=18";
@@ -1696,14 +1882,21 @@ function UpdateLesson($lesson_id, $name, $course_id)
     return $pageData;
 }
 
-function UpdateLessonPage($pageid, $pageContent, $name, $check)
+function UpdateLessonPage($pageid, $pageContent, $name, $check, $module_id)
 {
 
     global $domainname, $wstoken, $updateModules;
+    $Content = getImageSource($pageContent, $module_id, $pageid, false);
+    if (!empty($Content))
+        $Content = getAudioSource($Content, $module_id, $pageid, false);
+
+    if (!empty($Content))
+        $Content = getVideoSource($Content, $module_id, $pageid, false);
+
 
     $courseObject = [
         'page_id' => $pageid,
-        'content' => $pageContent,
+        'content' => $Content,
 
     ];
 

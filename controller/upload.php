@@ -8,6 +8,11 @@ include 'curl.php';
 require_once '../vendor/autoload.php';
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
+
+//$opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
+//$context = stream_context_create($opts);
+//$content = file_get_contents("http://localhost/CourseFiles/documentFiles/C001%20Moodle%20tutorial/images/image10.png",false,$context);
+//echo $content;
 libxml_use_internal_errors(true);
 $headings = array();
 $upperCss = "";
@@ -34,7 +39,8 @@ $qsort = 0;
 $checkSections = 0;
 $details = '';
 $contentPerChapter = '';
-$strContent='';
+$strContent = '';
+$fileCounter = 0;
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
 
 switch ($action) {
@@ -115,16 +121,13 @@ switch ($action) {
                     bDelete();
                     bChanged();
                     bInsert();
-
-
                     bUpdate();
 
 
                 }
             }
-        }
-        catch (Exception $e){
-            echo json_encode(array('response' => false, 'text' =>$e->getMessage()));
+        } catch (Exception $e) {
+            echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
 
         break;
@@ -172,13 +175,13 @@ switch ($action) {
                             if (bInsert())
                                 if (bUpdate())
                                     bDelete();
+
                 }
 
             }
 
-        }
-        catch (Exception $e){
-            echo json_encode(array('response' => false, 'text' =>$e->getMessage() ));
+        } catch (Exception $e) {
+            echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
         break;
     default:
@@ -264,32 +267,25 @@ function readUrlHeaders($contents)
     }
     sort($headings, SORT_NATURAL | SORT_FLAG_CASE);
 
-
     //readContents($headings, $contents);
     return cleanArray($headings, $contents);
-
-
 }
 
 function cleanArray($headings, $contents)
 {
     $headline = [];
     foreach ($headings as $head) {
-
         $startDelimiters1 = explode("<=>", $head);
         $firstDelimiter = $startDelimiters1[1];
         $firstDelimiter = strip_tags($firstDelimiter);
         $firstDelimiter = trim($firstDelimiter);
         $firstDelimiter = str_replace('&nbsp;', '', $firstDelimiter);
         $firstDelimiter = preg_replace('/[^A-Za-z0-9\-]/', '', $firstDelimiter);
-
         if ($firstDelimiter != '') {
             $headline[] = $head;
         }
 
     }
-
-
     return readContents($headline, $contents);
 }
 
@@ -297,18 +293,35 @@ function cleanArray($headings, $contents)
 function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
 {
     //identify video/audio/youtube by their extension
-    $mp4 = '';
-    $mp3 = '';
+    $mp4 = array();
+    $mp3 = array();
+    $mp4[] = '.mp4';
+    $mp4[] = '.MP4';
+    $mp4[] = '.MKV';
+    $mp4[] = '.mkv';
+    $mp4[] = '.AVI';
+    $mp4[] = '.avi';
+    $mp4[] = '.MOV';
+    $mp4[] = '.mov';
+    $mp3 [] = '.WAV';
+    $mp3 [] = '.wav';
+    $mp3 [] = '.AIFF';
+    $mp3 [] = '.aiff';
+    $mp3 [] = '.AAC';
+    $mp3 [] = '.aac';
+    $mp3 [] = '.OGG';
+    $mp3 [] = '.ogg';
+    $mp3 [] = '.WMA';
+    $mp3 [] = '.wma';
+    $mp3 [] = '.MP3';
+    $mp3 [] = '.mp3';
     $youtube = '';
     $dhtmxFormat = '';
     if ($isUser) {
         $mp4 = '001';
         $mp3 = '003';
         $youtube = '002';
-
     } else {
-        $mp4 = '.mp4';
-        $mp3 = '.mp3';
         $youtube = 'watch?v=';
         $youtube1 = 'youtu.be';
         $dhtmxFormat = 'video.nts.nl/play/?id=';
@@ -319,18 +332,70 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
     while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
         $contentStart += $startDelimiterLength;
         $contentEnd = strpos($str, $endDelimiter, $contentStart);
-
         if (false === $contentEnd) {
             break;
         }
         $replace = $startDelimiter . substr($str, $contentStart, $contentEnd - $contentStart) . $endDelimiter;
-
         $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat);
-
         $startFrom = $contentEnd + $endDelimiterLength;
     }
+    return $str;
+}
 
+function changeMediaUrl($str)
+{
+    $mp4 = array();
+    $mp3 = array();
+    $mp4[] = '.mp4';
+    $mp4[] = '.MP4';
+    $mp4[] = '.MKV';
+    $mp4[] = '.mkv';
+    $mp4[] = '.AVI';
+    $mp4[] = '.avi';
+    $mp4[] = '.MOV';
+    $mp4[] = '.mov';
+    $mp3 [] = '.WAV';
+    $mp3 [] = '.wav';
+    $mp3 [] = '.AIFF';
+    $mp3 [] = '.aiff';
+    $mp3 [] = '.AAC';
+    $mp3 [] = '.aac';
+    $mp3 [] = '.OGG';
+    $mp3 [] = '.ogg';
+    $mp3 [] = '.WMA';
+    $mp3 [] = '.wma';
+    $mp3 [] = '.MP3';
+    $mp3 [] = '.mp3';
 
+    $htmlDom = new DOMDocument;
+    @$htmlDom->loadHTML($str);
+    $links = $htmlDom->getElementsByTagName('a');
+    foreach ($links as $link) {
+        $linkHref = $link->getAttribute('href');
+        if (strlen(trim($linkHref)) == 0) {
+            continue;
+        }
+        //Skip if it is a hashtag / anchor link.
+        if ($linkHref[0] == '#') {
+            continue;
+        }
+
+        if (checkMp4Format($mp4, $linkHref) || checkMp4Format($mp4, $link->nodeValue)) {
+            $linkHref = strip_tags($linkHref);
+            $videoLink = downloadVideo($link->nodeValue, $mp4);
+            $link->removeAttribute('href');
+            $link->setAttribute("href", $videoLink);
+            $link->nodeValue = "Video Here";
+        } else if (checkMp3Format($mp3, $link->nodeValue) || checkMp3Format($mp3, $linkHref)) {
+            $linkHref = strip_tags($linkHref);
+            $audioLink = downloadAudio($link->nodeValue, $mp3);
+            $link->removeAttribute('href');
+            $link->setAttribute("href", $audioLink);
+            $link->nodeValue = "Audio Here";
+        }
+
+    }
+    $str = $htmlDom->saveHTML();
     return $str;
 }
 
@@ -338,67 +403,89 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
 {
     $mp4Delimiter = '';
     $mp3Delimiter = '';
+    global $fileCounter;
     $youtubeDelimiter = '';
     if ($isUser) {
         $mp4Delimiter = '<%001';
         $mp3Delimiter = '<%003';
         $youtubeDelimiter = '<%002';
-    } else if (strpos(strip_tags($replace), $dhtmxFormat) !== false) {
-
-        $replacement = "<iframe src='" . strip_tags($replace) . "' width='500' height='300' frameborder='1'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace($replace, $replacement, $str);
-
-    } else if (preg_match('/' . $mp4 . '/', strip_tags($replace))) {
-
-        $replacement = "<video controls='true'><source src='" . strip_tags($replace) . "'></video> </span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace($replace, $replacement, $str);
-    } else if (preg_match('/' . $mp3 . '/', strip_tags($replace))) {
-
-        $replacement = "<audio controls='true'><source src='" . strip_tags($replace) . "'></audio></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace($replace, $replacement, $str);
-
-    } else if (strpos($replace, $youtube) !== false) {
-
-        $embededVideo = str_replace("www.youtube.com/watch?v=", "www.youtube-nocookie.com/embed/", strip_tags($replace));
-
-        $embededVideo = explode("&amp;", $embededVideo);
-        $embededVideo = $embededVideo[0];
-
-        $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
-
-    } else if (strpos($replace, 'youtu.be') !== false) {
-
-        $embededVideo = str_replace("youtu.be", "www.youtube-nocookie.com/embed", strip_tags($replace));
-
-        $embededVideo = explode("&amp;", $embededVideo);
-        $embededVideo = $embededVideo[0];
-
-        $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-        $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
-
     }
 
+    if (filter_var(strip_tags($replace), FILTER_VALIDATE_URL)) {
+
+        if (!empty($dhtmxFormat)) {
+            if (strpos(strip_tags($replace), $dhtmxFormat) !== false) {
+
+                $replacement = "<iframe src='" . strip_tags($replace) . "' width='500' height='300' frameborder='1' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+                $str = str_replace($replace, $replacement, $str);
+            }
+        }
+        if (checkMp4Format($mp4, strip_tags($replace))) {
+            // echo  strip_tags($replace);
+            $videoLink = downloadVideo(strip_tags($replace), $mp4);
+            $replacement = "<a href='" . $videoLink . "'>Video Here</a>";
+            $str = str_replace($replace, $replacement, $str) . ".";
+
+        } else if (checkMp3Format($mp3, strip_tags($replace))) {
+            $link = downloadAudio(strip_tags($replace), $mp3);
+            $replacement = "<a href='" . $link . "'>Audio Here</a>";
+            $str = str_replace($replace, $replacement, $str) . ".";
+        } else if (strpos($replace, $youtube) !== false) {
+            $embededVideo = str_replace("www.youtube.com/watch?v=", "www.youtube-nocookie.com/embed/", strip_tags($replace));
+            $embededVideo = explode("&amp;", $embededVideo);
+            $embededVideo = $embededVideo[0];
+            $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+            $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
+        } else if (strpos($replace, 'youtu.be') !== false) {
+            $embededVideo = str_replace("youtu.be", "www.youtube-nocookie.com/embed", strip_tags($replace));
+            $embededVideo = explode("&amp;", $embededVideo);
+            $embededVideo = $embededVideo[0];
+            $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+            $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
+        }
+    }
     return $str;
 }
 
+function checkMp4Format($mp4, $link)
+{
+    foreach ($mp4 as $format) {
+        if (preg_match('/' . $format . '/', $link))
+            return true;
+    }
+    return false;
+}
+
+function checkMp3Format($mp3, $link)
+{
+    foreach ($mp3 as $format) {
+        if (preg_match('/' . $format . '/', $link))
+            return true;
+    }
+    return false;
+}
 
 function readGoogleDocUrl($content)
 {
     $contentsWithVideoAudio = '';
-           global $docName,$strContent;
-    if (strpos($content, '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
-        $startDelimiter = '&lt;%';
-        $endDelimiter = '%&gt;';
-        $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, true);
-    }
+    global $docName, $strContent;
+
+
+//
+//    if (strpos($content, '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
+//        $startDelimiter = '&lt;%';
+//        $endDelimiter = '%&gt;';
+//        $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, fa);
+//    }
     if (strpos($content, '<a') !== false && strpos($content, '/a>') !== false) {
         // setting delimiters for links
         $startDelimiter = '<a';
         $endDelimiter = '/a>';
         $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, false);
     }
-    //remove opening user delimiters
+
+    // $contentsWithVideoAudio = changeMediaUrl($contentsWithVideoAudio);
+    // remove opening user delimiters
     $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("&lt;%003", "", $contentsWithVideoAudio);
@@ -415,33 +502,39 @@ function readGoogleDocUrl($content)
 
 function loopImagesdownload($imagesArray, $docName)
 {
-global $strContent,$reimport;
+    global $strContent, $reimport;
     $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/";
-
     if (!file_exists($path)) {
-        if (!mkdir($path, 0774,true) && !is_dir($path)) {
+        if (!mkdir($path, 0774, true) && !is_dir($path)) {
             throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
         }
     }
-    $docFolder = $path . $docName."/images";
-    if($reimport) {
-        if (file_exists($docFolder)) {
-            xrmdir($docFolder);
-        }
-    }
+    $docFolder = $path . $docName . "/images";
+//    if ($reimport) {
+//        if (file_exists($docFolder)) {
+//            xrmdir($docFolder);
+//        }
+//    }
     if (!file_exists($docFolder)) {
-        if (!mkdir($docFolder, 0774,true) && !is_dir($docFolder)) {
+        if (!mkdir($docFolder, 0774, true) && !is_dir($docFolder)) {
             throw new \RuntimeException(sprintf('Directory "%s" was not created', $docFolder));
         }
     }
-    $imageCounter = 0;
+
     foreach ($imagesArray as $image) {
-        if($image) {
-            downloadImages($image, $docFolder, $imageCounter++);
+        $name = substr($image, -7);
+        $dir = "/CourseFiles/documentFiles/" . $docName . "/images/" . $name . ".png";
+        if ($image) {
+            $filename = $docFolder . "/" . $name . ".png";
+            if (!file_exists($filename))
+                downloadImages($image, $filename, $name);
+            else
+                $strContent = str_replace($image, $dir, $strContent);
         }
     }
     readUrlHeaders($strContent);
 }
+
 function getImages($content)
 {
     $doc = new DOMDocument();
@@ -454,25 +547,112 @@ function getImages($content)
     return $images;
 }
 
-function downloadImages($url, $docFolder, $imageCounter)
+function downloadImages($url, $image, $name)
 {
-    global $strContent,$docName;
-    $opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
+    global $strContent, $docName;
+    $opts = array('http' => array('header' => "User-Agent:Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.75 Safari/537.1\r\n"));
     $context = stream_context_create($opts);
-    $content = file_get_contents($url,false,$context);
-
-    $fp = fopen($docFolder ."/image" . $imageCounter . ".png", "w");
+    $content = file_get_contents($url, false, $context);
+    $dir = "/CourseFiles/documentFiles/" . $docName . "/images/" . $name . ".png";
+    $fp = fopen($image, "w");
     fwrite($fp, $content);
     fclose($fp);
-    $strContent = str_replace($url, "/CourseFiles/documentFiles/" .$docName ."/images/image" . $imageCounter . ".png", $strContent);
+    $strContent = str_replace($url, $dir, $strContent);
 }
-function xrmdir($dir) {
+
+function makedir($docname, $fileType)
+{
+    global $reimport;
+    $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/";
+    if (!file_exists($path)) {
+        if (!mkdir($path, 0777, true) && !is_dir($path)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+        }
+    }
+    $docFolder = $path . $docname . "/" . $fileType;
+    if ($reimport) {
+        if (file_exists($docFolder)) {
+            xrmdir($docFolder);
+        }
+    }
+    if (!file_exists($docFolder)) {
+        if (!mkdir($docFolder, 0777, true) && !is_dir($docFolder)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $docFolder));
+        }
+    }
+    return $docFolder;
+}
+
+function downloadAudio($url, $mp3)
+{
+    global $docName;
+    //global $reimport;
+    $filename = explode('/', $url);
+    $filename = end($filename);
+    $opts = array('http' => array('header' => "User-Agent:MyAgent/1.0\r\n"));
+    $context = stream_context_create($opts);
+    $url = str_replace(" ", "%20", $url);
+
+    $localUrl = "../../CourseFiles/documentFiles/" . $docName . "/audio/" . $filename;
+    if (!file_exists($localUrl)) {
+        $docFolder = makedir($docName, 'audio');
+        $content = file_get_contents($url, false, $context);
+        if (file_exists($docFolder)) {
+            $file = $docFolder . "/" . $filename;
+            if (!file_exists($file)) {
+                $fp = fopen($docFolder . "/" . $filename, "w+");
+                fwrite($fp, $content);
+                fclose($fp);
+                if (!file_exists($localUrl)) {
+                    return false;
+                }
+            }
+        }
+
+    }
+
+    return $localUrl;
+}
+
+function downloadVideo($url, $mp4)
+{
+    global $docName;
+    $filename = explode('/', $url);
+    $filename = end($filename);
+    $opts = array('http' => array('header' => "User-Agent:Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.75 Safari/537.1\r\n"));
+    $context = stream_context_create($opts);
+    $url = str_replace(" ", "%20", $url);
+    $localUrl = "../../CourseFiles/documentFiles/" . $docName . "/video/" . $filename;
+    if (!file_exists($localUrl)) {
+        $content = file_get_contents($url, false, $context);
+        $docFolder = makedir($docName, 'video');
+        if (file_exists($docFolder)) {
+            $file = $docFolder . "/" . $filename;
+            if (!file_exists($file)) {
+                $fp = fopen($docFolder . "/" . $filename, "w+");
+                fwrite($fp, $content);
+                fclose($fp);
+                if (!file_exists($localUrl)) {
+                    return false;
+                }
+            }
+        }
+
+
+    }
+    return $localUrl;
+
+
+}
+
+function xrmdir($dir)
+{
     $items = scandir($dir);
     foreach ($items as $item) {
         if ($item === '.' || $item === '..') {
             continue;
         }
-        $path = $dir.'/'.$item;
+        $path = $dir . '/' . $item;
         if (is_dir($path)) {
             xrmdir($path);
         } else {
@@ -481,6 +661,7 @@ function xrmdir($dir) {
     }
     rmdir($dir);
 }
+
 function readGoogleDocHtml($path, $docFolder, $check)
 {
     $contentsWithVideoAudio = '';
@@ -490,19 +671,19 @@ function readGoogleDocHtml($path, $docFolder, $check)
         $contents = file_get_contents($files[0]);
         $content = str_replace("images/image", "/CourseFiles/documentFiles/" . $docFolder . "/images/image", $contents);
         //check if string contains user delimiters ie
-        if (strpos($content, '<%') !== false && strpos($content, '%>') !== false) {
+//        if (strpos($content, '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
+//
+//            // setting delimiters  for links
+//            $startDelimiter = '&lt;%';
+//            $endDelimiter = '%&gt;';
+//            $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, true);
+//        } else {
 
-            // setting delimiters  for links
-            $startDelimiter = '<%';
-            $endDelimiter = '%>';
-            $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, true);
-        } else {
-
-            // setting delimiters for links
-            $startDelimiter = '<a';
-            $endDelimiter = '</a>';
-            $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, false);
-        }
+        // setting delimiters for links
+        $startDelimiter = '<a';
+        $endDelimiter = '</a>';
+        $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, false);
+        //  }
 
         //remove opening user delimiters
         $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
@@ -631,7 +812,6 @@ function bInsert()
     global $doc_id;
     $select_query = "UPDATE  toc a SET binsert=1
 WHERE moodle_id is null AND a.doc_id=" . $doc_id;
-
     $result = mysqli_query($dbc, $select_query) or die(mysqli_error($dbc));
     return $result;
 }
@@ -645,13 +825,6 @@ function bChanged()
     global $dbc;
     $toc_update = [];
     $archive_update = [];
-
-//    $update_query = "UPDATE  toc a SET a.bChanged =1
-//WHERE not exists (select * from archived_toc b WHERE b.chapter = a.chapter
-//  AND b.doc_id = a.doc_id) AND moodle_id > 1 AND a.doc_id=" . $doc_id;
-//
-//    $result = mysqli_query($dbc, $update_query) or die(mysqli_error($dbc));
-
 
     $query = "SELECT  chapter_id,chapter from toc  WHERE doc_id= " . $doc_id;
 
@@ -710,7 +883,7 @@ function insertToArchive($docName, $dbc, $reimport, $doc_id, $content)
     global $details;
     global $user_id;
 
-   mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 500 * 1024 * 1024)or die(mysqli_error($dbc));
+    mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 500 * 1024 * 1024) or die(mysqli_error($dbc));
 
     $docName = explode("(", $docName);
     $docName = $docName[0];
@@ -799,21 +972,17 @@ function getHeadingsWithContents($bodyContent, $content)
 
                     $contentPerChapter = $obj->content;
                     list($chapter_id, $chapter_name) = getHeadlineInformations($heading);
-                    $string_lenghth = strip_tags($contentPerChapter);
-
+                    $string_lenghth = $contentPerChapter;
                     $check = tableOfContents($obj->heading, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
-
                 } else {
-
                     $last_obj = end($bodyContent);
                     $lastkey = $last_obj->heading;
-
                     $lastkey = strip_tags($lastkey);
                     $lastkey = str_replace('&nbsp;', '', $lastkey);
                     $lastkey = preg_replace('/\s+/', ' ', $lastkey);
 
                     $last_content = $last_obj->content;
-                    $string_lenghth = strip_tags($last_content);
+                    $string_lenghth = $last_content;
                     list($last_chapter_id, $last_chapter_name) = getHeadlineInformations($lastkey);
                     $last_contentPerChapter = $last_content;
                     $check = tableOfContents($last_obj->heading, $last_chapter_id, $last_chapter_name, $last_contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
@@ -854,12 +1023,13 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
     global $qsort;
     global $checkSections;
     $result = '';
-
+    $string_lenghth = mysqli_real_escape_string($dbc, $string_lenghth);
     $docName = explode("(", $docName);
     $docName = $docName[0];
     $dateTime = date("d.m.Y") . " " . date("h:i:sa");
     $chapter1 = str_replace('nbsp;', '', $chapter_name);
     $chapter = str_replace('&', '', $chapter1);
+    $chapter = str_replace('?', '', $chapter);
 
     $chapter_num = str_replace('nbsp', '', $chapter_id);
     $chapter_nums = str_replace('&', '', $chapter_num);
@@ -889,7 +1059,7 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
         $section = $section[0];
         if ($section) {
 
-            mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 500 * 1024 * 1024)or die(mysqli_error($dbc));
+            mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 500 * 1024 * 1024) or die(mysqli_error($dbc));
 
             if (strpos($key, '</h1>') !== false) {
 
@@ -909,7 +1079,7 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
                 $counter_l2++;
                 $query_insert_toc = "INSERT INTO toc (doc_id,sort_id,doc_name, date_time, chapter_id, chapter, parent_id,content,type,charVal,level_id,uppercss,lowercss,section_id,toUpdate)
              VALUES ('" . $id . "'," . ++$sortId . ",'" . $docName . "','" . $dateTime . "','" . $chapter_nums . "','" . trim($chapter) . "'," . $parent_id . ", '" . mysqli_real_escape_string($dbc, $contentPerChapter) . "','lesson','" . $string_lenghth . "','L2_" . $counter_l1 . "." . $counter_l2 . "','" . mysqli_real_escape_string($dbc, $upperCss) . "','" . mysqli_real_escape_string($dbc, $lowerCss) . "','" . $section . "','" . $uStatus . "')
-            ON DUPLICATE KEY UPDATE level_id=values(level_id),date_time=values(date_time),parent_id=values(parent_id),chapter=values(chapter),content=values(content),type =values(type),bUpdate =values(bUpdate),bChanged =values(bChanged),uppercss =values(uppercss),lowercss =values(lowercss),binsert =values(binsert),charVal =values(charVal),section_id =values(section_id),bDelete =values(bDelete),toUpdate =" . $uStatus;
+             ON DUPLICATE KEY UPDATE level_id=values(level_id),date_time=values(date_time),parent_id=values(parent_id),chapter=values(chapter),content=values(content),type =values(type),bUpdate =values(bUpdate),bChanged =values(bChanged),uppercss =values(uppercss),lowercss =values(lowercss),binsert =values(binsert),charVal =values(charVal),section_id =values(section_id),bDelete =values(bDelete),toUpdate =" . $uStatus;
                 $result = mysqli_query($dbc, $query_insert_toc) or die(mysqli_error($dbc));
                 $parent_id1 = mysqli_insert_id($dbc);
                 $counter_l3 = 0;
@@ -1131,49 +1301,37 @@ function bUpdate()
     $toc_inserts = [];
     $archive_inserts = [];
 
-
     $query = " SELECT  chapter_id,charVal,content from toc  WHERE doc_id= " . $doc_id;
-
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
     while ($row = mysqli_fetch_assoc($result)) {
         $content = $row["charVal"];
 
+        $content = strip_tags($content);
         $toc_inserts[$row["chapter_id"]] = $content;
-
     }
 
     if (count($toc_inserts) > 0) {
 
         $archiveQuery = "SELECT  chapter_id,charVal,content from archived_toc  WHERE doc_id= " . $doc_id;
-
         $archiveResult = mysqli_query($dbc, $archiveQuery) or die(mysqli_error($dbc));
-
         while ($row = mysqli_fetch_assoc($archiveResult)) {
-
             $content = $row["charVal"];
-
+            $content = strip_tags($content);
             $archive_inserts[$row["chapter_id"]] = $content;
 
         }
     }
 
-
     $difference = array_diff($toc_inserts, $archive_inserts);
 
-//echo "<pre>";
-//print_r($archive_inserts);
-
-    // foreach ($difference as $key => $value) {
-
-    $query = "UPDATE   toc a SET a.bUpdate = 1 WHERE chapter_id IN ('" . implode(',', array_keys($difference)) . "') ";
-
-    $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
-
-    if (!$result) {
-        echo "Something wrong  " . $result;
+    foreach ($difference as $item => $val) {
+        $query = "UPDATE   toc a SET a.bUpdate = 1 WHERE a.doc_id =" . $doc_id . "  AND a.chapter_id ='" . $item . "'";
+        $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+        if (!$result) {
+            echo "Something wrong  " . $result;
+        }
     }
-    // }
 
 
     $query_update = "UPDATE   archived_toc a SET a.bDelete=1
@@ -1184,199 +1342,200 @@ WHERE NOT  exists (select * from toc b WHERE  a.chapter_id=b.chapter_id)   AND m
     return $result;
 }
 
-function refreshUpdate()
-{
-    global $doc_id;
-    global $dbc;
-    $query_update = "UPDATE toc SET toUpdate=0  where doc_id= " . $doc_id;
-    $result = mysqli_query($dbc, $query_update) or die(mysqli_error($dbc));
 
-    return $result;
-}
+    function refreshUpdate()
+    {
+        global $doc_id;
+        global $dbc;
+        $query_update = "UPDATE toc SET toUpdate=0  where doc_id= " . $doc_id;
+        $result = mysqli_query($dbc, $query_update) or die(mysqli_error($dbc));
 
-function getHeadlineInformations($string)
-{
-    $position = 0;
-    $chapter_id = "";
-    while (isValid_(substr($string, $position, 1))) {
-        $chapter_id .= substr($string, $position++, 1);
+        return $result;
     }
 
-    return array($chapter_id, substr($string, $position));
-}
+    function getHeadlineInformations($string)
+    {
+        $position = 0;
+        $chapter_id = "";
+        while (isValid_(substr($string, $position, 1))) {
+            $chapter_id .= substr($string, $position++, 1);
+        }
+
+        return array($chapter_id, substr($string, $position));
+    }
 
 //function to validate string
-function isValid_($string)
-{
-    return is_numeric($string) || ctype_punct($string);
-}
+    function isValid_($string)
+    {
+        return is_numeric($string) || ctype_punct($string);
+    }
 
 // Reading the headings of the file
-function getContents($str, $startDelimiter, $endDelimiter)
-{
-    $contents = '';
+    function getContents($str, $startDelimiter, $endDelimiter)
+    {
+        $contents = '';
 
-    $startDelimiterLength = strlen($startDelimiter);
-    $endDelimiterLength = strlen($endDelimiter);
-    $startFrom = $contentStart = $contentEnd = 0;
-    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
-        $contentStart += $startDelimiterLength;
-        $contentEnd = strpos($str, $endDelimiter, $contentStart);
-        if (false === $contentEnd) {
-            break;
+        $startDelimiterLength = strlen($startDelimiter);
+        $endDelimiterLength = strlen($endDelimiter);
+        $startFrom = $contentStart = $contentEnd = 0;
+        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+            $contentStart += $startDelimiterLength;
+            $contentEnd = strpos($str, $endDelimiter, $contentStart);
+            if (false === $contentEnd) {
+                break;
+            }
+            $contents .= substr($str, $contentStart, $contentEnd - $contentStart);
+            $startFrom = $contentEnd + $endDelimiterLength;
         }
-        $contents .= substr($str, $contentStart, $contentEnd - $contentStart);
-        $startFrom = $contentEnd + $endDelimiterLength;
+
+        return $contents;
     }
 
-    return $contents;
-}
+    function getUrlHeadings($str, $delimiters)
+    {
+        global $headings;
 
-function getUrlHeadings($str, $delimiters)
-{
-    global $headings;
+        $startEndDelimiters = explode(",", $delimiters);
+        $startDelimiter = '<' . $startEndDelimiters[0];
 
-    $startEndDelimiters = explode(",", $delimiters);
-    $startDelimiter = '<' . $startEndDelimiters[0];
+        $endDelimiter = '<' . $startEndDelimiters[1] . '>';
+        $startDelimiterLength = strlen($startDelimiter);
+        $endDelimiterLength = strlen($endDelimiter);
+        $startFrom = $contentStart = $contentEnd = 0;
 
-    $endDelimiter = '<' . $startEndDelimiters[1] . '>';
-    $startDelimiterLength = strlen($startDelimiter);
-    $endDelimiterLength = strlen($endDelimiter);
-    $startFrom = $contentStart = $contentEnd = 0;
+        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
 
-    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+            $contentStart += $startDelimiterLength;
+            $contentEnd = strpos($str, $endDelimiter, $contentStart);
+            if (false === $contentEnd) {
+                break;
+            }
+            if ($startDelimiter == '<h1') {
+                $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
+            }
 
-        $contentStart += $startDelimiterLength;
-        $contentEnd = strpos($str, $endDelimiter, $contentStart);
-        if (false === $contentEnd) {
-            break;
+            if ($startDelimiter == '<h2') {
+                $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
+            }
+
+            if ($startDelimiter == '<h3') {
+                $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
+            }
+
+            if ($startDelimiter == '<h4') {
+                $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
+            }
+
+            if ($startDelimiter == '<h5') {
+                $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
+            }
+
+            if ($startDelimiter == '<h6') {
+                $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
+            }
+
+            $startFrom = $contentEnd + $endDelimiterLength;
         }
-        if ($startDelimiter == '<h1') {
-            $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
-        }
 
-        if ($startDelimiter == '<h2') {
-            $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
-        }
-
-        if ($startDelimiter == '<h3') {
-            $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
-        }
-
-        if ($startDelimiter == '<h4') {
-            $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
-        }
-
-        if ($startDelimiter == '<h5') {
-            $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
-        }
-
-        if ($startDelimiter == '<h6') {
-            $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
-        }
-
-        $startFrom = $contentEnd + $endDelimiterLength;
+        // return $contents;
     }
-
-    // return $contents;
-}
 
 //read Heading with css
-function getHeadings($str, $delimiters, $startclose, $endclose)
-{
+    function getHeadings($str, $delimiters, $startclose, $endclose)
+    {
 
-    global $headings;
+        global $headings;
 
-    $startEndDelimiters = explode(",", $delimiters);
-    $startDelimiter = $startclose . $startEndDelimiters[0];
+        $startEndDelimiters = explode(",", $delimiters);
+        $startDelimiter = $startclose . $startEndDelimiters[0];
 
-    $endDelimiter = $startclose . $startEndDelimiters[1] . $endclose;
-    $startDelimiterLength = strlen($startDelimiter);
-    $endDelimiterLength = strlen($endDelimiter);
-    $startFrom = $contentStart = $contentEnd = 0;
+        $endDelimiter = $startclose . $startEndDelimiters[1] . $endclose;
+        $startDelimiterLength = strlen($startDelimiter);
+        $endDelimiterLength = strlen($endDelimiter);
+        $startFrom = $contentStart = $contentEnd = 0;
 
-    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
 
-        $contentStart += $startDelimiterLength;
-        $contentEnd = strpos($str, $endDelimiter, $contentStart);
-        if (false === $contentEnd) {
-            break;
-        }
-        if ($startDelimiter == '<h1') {
+            $contentStart += $startDelimiterLength;
+            $contentEnd = strpos($str, $endDelimiter, $contentStart);
+            if (false === $contentEnd) {
+                break;
+            }
+            if ($startDelimiter == '<h1') {
 
-            $head = '<h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
-            $head = strip_tags($head);
-            $head = trim($head, "\xC2\xA0");
-            $head = str_replace('&nbsp;', '', $head);
-            $head = str_replace(preg_match('/\s/', $head), '', $head);
-            if ($head != '' || strpos($head, '&nbsp;') === false) {
-                $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
+                $head = '<h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
+                $head = strip_tags($head);
+                $head = trim($head, "\xC2\xA0");
+                $head = str_replace('&nbsp;', '', $head);
+                $head = str_replace(preg_match('/\s/', $head), '', $head);
+                if ($head != '' || strpos($head, '&nbsp;') === false) {
+                    $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
+
+                }
 
             }
 
-        }
+            if ($startDelimiter == '<h2') {
+                $head = '<h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
+                $head = strip_tags($head);
+                $head = trim($head, "\xC2\xA0");
+                $head = str_replace('&nbsp;', '', $head);
+                $head = str_replace(preg_match('/\s/', $head), '', $head);
+                if ($head != '' || strpos($head, '&nbsp;') === false) {
+                    $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
 
-        if ($startDelimiter == '<h2') {
-            $head = '<h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
-            $head = strip_tags($head);
-            $head = trim($head, "\xC2\xA0");
-            $head = str_replace('&nbsp;', '', $head);
-            $head = str_replace(preg_match('/\s/', $head), '', $head);
-            if ($head != '' || strpos($head, '&nbsp;') === false) {
-                $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
-
+                }
             }
-        }
 
-        if ($startDelimiter == '<h3') {
-            $head = '<h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
-            $head = strip_tags($head);
-            $head = trim($head, "\xC2\xA0");
-            $head = str_replace('&nbsp;', '', $head);
-            $head = str_replace(preg_match('/\s/', $head), '', $head);
-            if ($head != '' || strpos($head, '&nbsp;') === false) {
-                $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';;
+            if ($startDelimiter == '<h3') {
+                $head = '<h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
+                $head = strip_tags($head);
+                $head = trim($head, "\xC2\xA0");
+                $head = str_replace('&nbsp;', '', $head);
+                $head = str_replace(preg_match('/\s/', $head), '', $head);
+                if ($head != '' || strpos($head, '&nbsp;') === false) {
+                    $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';;
 
+                }
             }
-        }
 
-        if ($startDelimiter == '<h4') {
-            $head = '<h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
-            $head = strip_tags($head);
-            $head = trim($head, "\xC2\xA0");
-            $head = str_replace('&nbsp;', '', $head);
-            $head = str_replace(preg_match('/\s/', $head), '', $head);
-            if ($head != '' || strpos($head, '&nbsp;') === false) {
-                $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
+            if ($startDelimiter == '<h4') {
+                $head = '<h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
+                $head = strip_tags($head);
+                $head = trim($head, "\xC2\xA0");
+                $head = str_replace('&nbsp;', '', $head);
+                $head = str_replace(preg_match('/\s/', $head), '', $head);
+                if ($head != '' || strpos($head, '&nbsp;') === false) {
+                    $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
 
+                }
             }
-        }
 
-        if ($startDelimiter == '<h5') {
-            $head = '<h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
-            $head = strip_tags($head);
-            $head = trim($head, "\xC2\xA0");
-            $head = str_replace('&nbsp;', '', $head);
-            $head = str_replace(preg_match('/\s/', $head), '', $head);
-            if ($head != '' || strpos($head, '&nbsp;') === false) {
-                $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
+            if ($startDelimiter == '<h5') {
+                $head = '<h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
+                $head = strip_tags($head);
+                $head = trim($head, "\xC2\xA0");
+                $head = str_replace('&nbsp;', '', $head);
+                $head = str_replace(preg_match('/\s/', $head), '', $head);
+                if ($head != '' || strpos($head, '&nbsp;') === false) {
+                    $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
 
+                }
             }
-        }
 
-        if ($startDelimiter == '<h6') {
-            $head = '<h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
-            $head = strip_tags($head);
-            $head = trim($head, "\xC2\xA0");
-            $head = str_replace('&nbsp;', '', $head);
-            $head = str_replace(preg_match('/\s/', $head), '', $head);
-            if ($head != '' || strpos($head, '&nbsp;') === false) {
-                $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
+            if ($startDelimiter == '<h6') {
+                $head = '<h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
+                $head = strip_tags($head);
+                $head = trim($head, "\xC2\xA0");
+                $head = str_replace('&nbsp;', '', $head);
+                $head = str_replace(preg_match('/\s/', $head), '', $head);
+                if ($head != '' || strpos($head, '&nbsp;') === false) {
+                    $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
 
+                }
             }
+
+            $startFrom = $contentEnd + $endDelimiterLength;
         }
 
-        $startFrom = $contentEnd + $endDelimiterLength;
     }
-
-}
