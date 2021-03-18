@@ -4,7 +4,7 @@ include_once 'config.php';
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 $action = $_GET['action'];
 
-
+header('Content-Type: text/html; charset=utf-8');
 $isDelete = $_GET['isDelete'];
 
 switch ($action) {
@@ -12,7 +12,7 @@ switch ($action) {
     case 1:
         $stat = $_GET['stat'];
         $ids = $_GET['id'];
-        header('Content-type:text/xml');
+
         echo '<?xml version="1.0"?>' . PHP_EOL;
         echo '<rows>';
 

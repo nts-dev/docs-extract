@@ -54,7 +54,7 @@ grid_1.attachEvent('onRowSelect', onGrid1RowSelect);
 function onDocumentRibbonClick(id) {
 
     if (id === 'new') {
-       openUploadWindow(0, 0);
+        openUploadWindow(0, 0);
     }
 
     if (id === 'delete') {
@@ -287,21 +287,33 @@ function openUploadWindow(reimport, doc_id) {
             });
         }
         var myUploader = form_2.getUploader("myFiles");
-        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id+"&user_id="+ user_id);
+        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id + "&user_id=" + user_id);
     });
+
+    form_2.attachEvent("onUploadFile",function(realName,serverName){
+        // your code here
+
+        if (realName.endsWith(".htm")) {
+                    var val = openUploadFolderWindow(realName);
+                }
+    });
+
 
     form_2.attachEvent("onUploadComplete", function (count) {
         dhtmlx.message({
             title: 'Success',
-            expire: 2000,
-            text: "Your File has been Uploaded and extracted"
+            expire: 20000,
+            text:"Your File has been Uploaded and extracted "
         });
         grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
         tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
         tab_2.detachObject(true);
-        window_4.close();
+
         grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id);
         grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id);
+
+        window_4.close();
+
     });
 
     form_2.attachEvent("onUploadFail", function (realName) {
@@ -309,9 +321,10 @@ function openUploadWindow(reimport, doc_id) {
         dhtmlx.alert({
             title: 'Error',
             expire: 2000,
-            text: "The course You are Trying to update Already Exist, Please reselect the course and update again!"
+            text: realName+" The course You are Trying to update Already Exist, Please reselect the course and update again!"
         });
     });
+
 
     form_2.attachEvent("onButtonClick", function (id) {
             if (id == "import") {
@@ -324,7 +337,7 @@ function openUploadWindow(reimport, doc_id) {
                         url: url,
                         details: details,
                         server: server_id,
-                        user_id:user_id
+                        user_id: user_id
                     };
                     window_4.progressOn();
                     $.post(baseURL + "controller/upload.php?action=2", postdata, function (data) {
@@ -386,9 +399,89 @@ function openUploadWindow(reimport, doc_id) {
 
 }
 
+function openUploadFolderWindow(docname) {
+    var windows = new dhtmlXWindows();
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
+    window_4.setText('Import Document');
+    window_4.setModal(1);
+    window_4.button('park').hide();
+    window_4.button('minmax').hide();
+    var name = docname.replace(".htm", "_files");
+    var formData = [
+        {
+            type: "label",
+            label: "Select and upload all files used in the MS word files ie. files in  " + name + " Here!, if you did not use any file(images, shapes, etc  in the document, click Continue...",
+            iconset: "awesome",
+            width: myWidth * 0.27,
+        },
+        {
+            type: "fieldset",
+            label: "Select  folder",
+            iconset: "awesome",
+            width: myWidth * 0.27,
+            list: [{
+                type: "upload",
+                name: "files",
+                inputWidth: myWidth * 0.2,
+                autoStart: true,
+                swfPath: baseURL + "controller/uploader.swf",
+                swfUrl: baseURL + "controller/upload.php",
+                autoRemove: true,
+            }]
+        },
+        {
+            type: "label", labelWidth: myWidth * 0.27, list: [
+                {
+                    type: "label", labelWidth: myWidth * 0.15
+                },
+                {type: "newcolumn"},
+                {type: "button", name: "continue", value: "Continue", icon: "fa fa-download", imgdis: "fa fa-download"},
+                {type: "newcolumn"},
+                {type: "button", name: "cancel", value: "Cancel"},
+            ]
+        },
+    ];
+    var formFolder = window_4.attachForm(formData);
+
+    var myUploader = formFolder.getUploader("files");
+    var folderName = name.replace("_files", "");
+         myUploader.setURL("controller/upload.php?action=3&folder="+ folderName);
+         status = myUploader.getStatus();
+    formFolder.attachEvent("onUploadComplete", function (count) {
+            dhtmlx.message({
+            title: 'Success',
+            expire: 2000,
+            text: count+ " File  Uploaded Successfully"
+        });
+        if(status==0){
+            window_4.close();
+        }
+
+    });
+    formFolder.attachEvent("onButtonClick", function (id) {
+        if (id === "cancel") {
+            dhtmlx.message({
+                title: 'Success',
+                expire: 2000,
+                text: "Import Cancelled!"
+            });
+            window_4.close();
+        }
+        if (id === "continue") {
+
+            dhtmlx.message({
+                title: 'Success',
+                expire: 20000,
+                text: "Proceeding with upload...!"
+            });
+            window_4.close();
+            return true;
+        }
+    });
+}
+
 function updateServer(doc_id, id) {
 
-    // main_layout.progressOn();
     $.get(baseURL + "controller/documents.php?action=12&doc_id=" + doc_id + "&id=" + id, function (data) {
         main_layout.progressOff();
         if (data.response) {

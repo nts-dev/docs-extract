@@ -1287,10 +1287,13 @@ function getImageSource($Content, $module_id, $page_id, $isPage)
 //            echo "<pre>";
 //            print_r($tag->attributes);
             $old_src = $tag->getAttribute('src');
+            $link = str_replace('../../..', '', $old_src);
+            $link = str_replace("%20", " " , $link);
             $filename = 'images' . $counter . '.jpg';
             if ($filename) {
                 // echo $old_src;
-                $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
+                $new_src_url = replaceLinks($page_id, $module_id, $filename, $link, $isPage);
+
                 $Content = str_replace($old_src, $new_src_url, $Content);
 
             }
@@ -1327,7 +1330,7 @@ function getAudioSource($Content, $module_id, $page_id, $isPage)
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
                 $toAdd = " <audio controls='true'><source src='" . $new_src_url . "'></audio></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                //$Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
+                $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
                 $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
                 $Content = str_replace('Audio Here', '', $Content);
 
@@ -1363,8 +1366,8 @@ function getVideoSource($Content, $module_id, $page_id, $isPage)
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
                 $toAdd = " <video controls='true'><source src='" . $new_src_url . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-               // $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
-              $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
+                $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
+                $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
                 $Content = str_replace('Video Here', '', $Content);
 
             }
@@ -1394,7 +1397,6 @@ function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
     $serverurl = $domainname . "/moosh.php?action=11";
     $resp = $curl->post($serverurl, $obj);
     $res = json_decode($resp);
-
        return $res->image;
 }
 
@@ -1777,18 +1779,18 @@ function UpdatePage($pageid, $pageContent, $sectionname, $module_id)
     global $domainname, $wstoken, $updateModules;
 
 
-    if ($pageid)
-        $Content = getImageSource($pageContent, $pageid, $pageid, true);
-
-    if (!empty($Content))
-        $Content = getAudioSource($Content, $module_id, $pageid, true);
-
-    if (!empty($Content))
-        $Content = getVideoSource($Content, $module_id, $pageid, true);
+//    if ($pageid)
+//        $Content = getImageSource($pageContent, $pageid, $pageid, true);
+//
+//    if (!empty($Content))
+//        $Content = getAudioSource($Content, $module_id, $pageid, true);
+//
+//    if (!empty($Content))
+//        $Content = getVideoSource($Content, $module_id, $pageid, true);
 
     $courseObject = [
         'page_id' => $pageid,
-        'content' => $Content,
+        'content' => $pageContent,
     ];
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=7";

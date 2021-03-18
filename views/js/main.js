@@ -30,6 +30,7 @@ var doc_url;
 var description;
 var server_id;
 var user_id = null;
+var status = null;
 
 /************** Get and set  windows dimensions******************/
 if (typeof (main_layout.innerWidth) == 'number') {

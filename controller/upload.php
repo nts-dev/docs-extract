@@ -2,12 +2,14 @@
 
 ini_set('display_errors', '0');
 header("Access-Control-Allow-Origin: *");
+header('Content-Type: text/html; charset=utf-8');
 ini_set('max_execution_time', 0);
 include 'config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
+define('UPLOADFOLDER', 3);
 
 //$opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
 //$context = stream_context_create($opts);
@@ -25,6 +27,7 @@ $parent_id2 = 0;
 $documentId = 0;
 $updatekey = -1;
 $insertRecords = [];
+$responses = [];
 $firstDelimiters = '';
 $filename = "";
 $counter_l1 = 0;
@@ -60,7 +63,7 @@ switch ($action) {
                 $name = explode(".", $filename);
                 $docName = $name[0];
 
-                $accepted_types = array('application/zip', 'application/x-zip-compressed',
+                $accepted_types = array('application/zip','text/html', 'application/x-zip-compressed',
                     'multipart/x-zip', 'application/x-compressed');
                 foreach ($accepted_types as $mime_type) {
                     if ($mime_type == $type) {
@@ -69,10 +72,10 @@ switch ($action) {
                     }
                 }
 
-                $continue = strtolower($name[1]) == 'zip' ? true : false;
-                if (!$continue) {
-                    $myMsg = "Please upload a valid .zip file.";
-                }
+//                $continue = strtolower($name[1]) == 'zip' ? true : false;
+//                if (!$continue) {
+//                    $myMsg = "Please upload a valid .zip file.";
+//                }
 
                 /* PHP current path */
                 $path_html = dirname(__FILE__) . '/';
@@ -89,26 +92,33 @@ switch ($action) {
                 }
                 $myDir = $path . $filenoext; // target directory
                 $myFile = $path . $filename; // target zip file
+                $dir = str_replace('.htm', '', $myFile);
 
                 if (move_uploaded_file($source, $myFile)) {
-                    $zip = new ZipArchive();
 
-                    $x = $zip->open($myFile); // open the zip file to extract
-                    if ($x === true) {
-                        $zip->extractTo($myDir); // place in the directory with same name
+                    if (strpos($myFile, '.htm') !== false) {
 
-                        readGoogleDocHtml($myDir, $filenoext, true);
+                         readGoogleDocHtml($myDir, $filenoext, true);
 
-                        $zip->close();
-                        unlink($myFile);
+                        if (file_exists($dir)) {
+                            xrmdir($dir);
+                        }
+                     }
+                     else {
+                         $zip = new ZipArchive();
+                         $x = $zip->open($myFile); // open the zip file to extract
+                         if ($x === true) {
+                             $zip->extractTo($myDir); // place in the directory with same name
+                             readGoogleDocZip($myDir, $filenoext, true);
 
-
-                    }
+                             $zip->close();
+                             unlink($myFile);
+                         }
+                     }
                     $myMsg = "Your .zip file uploaded and unziped.";
                     $updateMsg = "Course Updated.";
 
                     print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
-
                 } else {
                     $myMsg = "There was a problem with the upload.";
                     header("Content-Type: text/json");
@@ -122,10 +132,10 @@ switch ($action) {
                     bChanged();
                     bInsert();
                     bUpdate();
-
-
                 }
             }
+
+           // echo json_encode($responses);
         } catch (Exception $e) {
             echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
@@ -184,6 +194,44 @@ switch ($action) {
             echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
         break;
+
+    case  UPLOADFOLDER:
+        $folderName = filter_input(INPUT_GET, 'folder');
+        $folder = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/".$folderName."/";
+        if (!file_exists($folder)) {
+            if (!mkdir($folder, 0774, true) && !is_dir($folder)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $folder));
+            }
+        }
+        if ($_FILES["file"]["name"]) {
+            $filename = $_FILES["file"]["name"];
+            $source = $_FILES["file"]["tmp_name"];
+            $type = $_FILES["file"]["type"];
+            $name = explode(".", $filename);
+            $docName = $name[0];
+            $myFile = $folder.$filename;
+
+            if (!file_exists($myFile)) {
+            if (move_uploaded_file($source, $myFile)) {
+                $myMsg = "Your .zip file uploaded and unziped.";
+                $updateMsg = "Course Updated.";
+                print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
+
+            }
+            else{
+                $myMsg = "There was a problem with the upload.";
+                header("Content-Type: text/json");
+                print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
+            }
+        }
+            else{
+            $myMsg = "Your .zip file uploaded and unziped.";
+            $updateMsg = "Course Updated.";
+            print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
+        }
+        }
+        break;
+
     default:
         break;
 }
@@ -267,7 +315,7 @@ function readUrlHeaders($contents)
     }
     sort($headings, SORT_NATURAL | SORT_FLAG_CASE);
 
-    //readContents($headings, $contents);
+
     return cleanArray($headings, $contents);
 }
 
@@ -286,6 +334,9 @@ function cleanArray($headings, $contents)
         }
 
     }
+//    echo "<pre>";
+//    print_r($headline);
+//    exit;
     return readContents($headline, $contents);
 }
 
@@ -664,20 +715,46 @@ function xrmdir($dir)
 
 function readGoogleDocHtml($path, $docFolder, $check)
 {
+  $filename = explode( ".",$docFolder );
+    $filename = $filename[0];
+    $filename = str_replace(' ', "%20" , $filename);
+        $contents = file_get_contents($path);
+
+    if (strpos($contents, $filename."_files") !== false) {
+        $contents = str_replace($filename."_files", "/CourseFiles/documentFiles/" . $filename , $contents);
+        $response = [
+            'response' => "uploadFiles",
+            'text' => "Upload files"
+        ];
+        $responses[] = $response;
+    }
+        // setting delimiters for links
+        $startDelimiter = '<a';
+        $endDelimiter = '</a>';
+        $contentsWithVideoAudio = getReplaceLinks($contents, $startDelimiter, $endDelimiter, false);
+        //remove opening user delimiters
+        $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
+        $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
+        $contentsWithVideoAudio = str_replace("&lt;%003", "", $contentsWithVideoAudio);
+        //remove closing user delimiters
+        $contentsWithVideoAudio = str_replace("&lt;iframe", "<iframe", $contentsWithVideoAudio);
+        $contentsWithVideoAudio = str_replace("/iframe&gt;", "/iframe>", $contentsWithVideoAudio);
+        if ($check) {
+             readHeaders($contentsWithVideoAudio);
+        }
+
+
+
+}
+
+function readGoogleDocZip($path, $docFolder, $check)
+{
     $contentsWithVideoAudio = '';
     $files = glob($path . '/*html');
 
     if ($files) {
         $contents = file_get_contents($files[0]);
         $content = str_replace("images/image", "/CourseFiles/documentFiles/" . $docFolder . "/images/image", $contents);
-        //check if string contains user delimiters ie
-//        if (strpos($content, '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
-//
-//            // setting delimiters  for links
-//            $startDelimiter = '&lt;%';
-//            $endDelimiter = '%&gt;';
-//            $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, true);
-//        } else {
 
         // setting delimiters for links
         $startDelimiter = '<a';
@@ -705,8 +782,9 @@ function readGoogleDocHtml($path, $docFolder, $check)
 
 function readHeaders($contents)
 {
+   global $headings;
     $heading_arrays = array('<h1,</h1>', '<h2,</h2>', '<h3,</h3>', '<h4,</h4>', '<h5,</h5>', '<h6,</h6>');
-    $headings = [];
+
 
     foreach ($heading_arrays as $heading_array) {
 
@@ -717,6 +795,8 @@ function readHeaders($contents)
     sort($headings, SORT_NATURAL | SORT_FLAG_CASE);
 
     cleanArray($headings, $contents);
+
+
 
 
 }
@@ -783,6 +863,9 @@ function readContents($headings, $content)
 </body>
 
 </html>';
+//   echo "<pre>";
+//   print_r($bodyContent);
+//   exit;
 
     return getHeadingsWithContents($bodyContent, $content);
 
@@ -973,7 +1056,9 @@ function getHeadingsWithContents($bodyContent, $content)
                     $contentPerChapter = $obj->content;
                     list($chapter_id, $chapter_name) = getHeadlineInformations($heading);
                     $string_lenghth = $contentPerChapter;
-                    $check = tableOfContents($obj->heading, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
+                  //  $contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $contentPerChapter);
+                   // echo $chapter_id." == ". $chapter_name."<br>";
+                   $check = tableOfContents($obj->heading, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
                 } else {
                     $last_obj = end($bodyContent);
                     $lastkey = $last_obj->heading;
@@ -985,6 +1070,8 @@ function getHeadingsWithContents($bodyContent, $content)
                     $string_lenghth = $last_content;
                     list($last_chapter_id, $last_chapter_name) = getHeadlineInformations($lastkey);
                     $last_contentPerChapter = $last_content;
+                   // $last_contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $last_contentPerChapter);
+                   // echo $last_chapter_id." == ". $last_chapter_name;
                     $check = tableOfContents($last_obj->heading, $last_chapter_id, $last_chapter_name, $last_contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
 
 
@@ -1004,8 +1091,7 @@ function getHeadingsWithContents($bodyContent, $content)
 
 function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId)
 {
-    global $insertRecords;
-    // global $documentId;
+
     global $docName;
     global $sortId;
     global $parent_id;
@@ -1029,7 +1115,7 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
     $dateTime = date("d.m.Y") . " " . date("h:i:sa");
     $chapter1 = str_replace('nbsp;', '', $chapter_name);
     $chapter = str_replace('&', '', $chapter1);
-    $chapter = str_replace('?', '', $chapter);
+    //$chapter = str_replace('?', '', $chapter);
 
     $chapter_num = str_replace('nbsp', '', $chapter_id);
     $chapter_nums = str_replace('&', '', $chapter_num);
