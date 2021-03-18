@@ -291,9 +291,7 @@ function openUploadWindow(reimport, doc_id) {
     });
 
     form_2.attachEvent("onUploadFile",function(realName,serverName){
-        // your code here
-
-        if (realName.endsWith(".htm")) {
+        if (getExtension(realName)=='htm') {
                     var val = openUploadFolderWindow(realName);
                 }
     });
@@ -399,6 +397,10 @@ function openUploadWindow(reimport, doc_id) {
 
 }
 
+function getExtension(filename) {
+    var parts = filename.split('.');
+    return parts[parts.length - 1];
+}
 function openUploadFolderWindow(docname) {
     var windows = new dhtmlXWindows();
     var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
