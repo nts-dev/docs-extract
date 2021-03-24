@@ -63,7 +63,7 @@ switch ($action) {
                 $name = explode(".", $filename);
                 $docName = $name[0];
 
-                $accepted_types = array('application/zip','text/html', 'application/x-zip-compressed',
+                $accepted_types = array('application/zip', 'text/html', 'application/x-zip-compressed',
                     'multipart/x-zip', 'application/x-compressed');
                 foreach ($accepted_types as $mime_type) {
                     if ($mime_type == $type) {
@@ -81,6 +81,7 @@ switch ($action) {
                 $path_html = dirname(__FILE__) . '/';
                 $filenoext = basename($filename, '.zip');
                 $filenoext = basename($filenoext, '.ZIP');
+                $filenoext = basename($filenoext, '.doc');
                 // $path = str_replace("Google_docs_extract\controller", "googleDocMedia", $path_html);
 
                 $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/";
@@ -94,37 +95,41 @@ switch ($action) {
                 $myFile = $path . $filename; // target zip file
                 $dir = str_replace('.htm', '', $myFile);
 
-                if (move_uploaded_file($source, $myFile)) {
+                if (strpos($myFile, '.htm') !== false || strpos($myFile, '.zip') !== false) {
+                    if (move_uploaded_file($source, $myFile)) {
 
-                    if (strpos($myFile, '.htm') !== false) {
+                        if (strpos($myFile, '.htm') !== false) {
 
-                         readGoogleDocHtml($myDir, $filenoext, true);
+                            readGoogleDocHtml($myDir, $filenoext, true);
 
-                        if (file_exists($dir)) {
-                            xrmdir($dir);
+                            if (file_exists($dir)) {
+                                xrmdir($dir);
+                            }
+                        } else {
+                            $zip = new ZipArchive();
+                            $x = $zip->open($myFile); // open the zip file to extract
+                            if ($x === true) {
+                                $zip->extractTo($myDir); // place in the directory with same name
+                                readGoogleDocZip($myDir, $filenoext, true);
+                                $zip->close();
+                                unlink($myFile);
+                            }
                         }
-                     }
-                     else {
-                         $zip = new ZipArchive();
-                         $x = $zip->open($myFile); // open the zip file to extract
-                         if ($x === true) {
-                             $zip->extractTo($myDir); // place in the directory with same name
-                             readGoogleDocZip($myDir, $filenoext, true);
+                        $myMsg = "Your .zip file uploaded and unziped.";
+                        $updateMsg = "Course Updated.";
 
-                             $zip->close();
-                             unlink($myFile);
-                         }
-                     }
-                    $myMsg = "Your .zip file uploaded and unziped.";
-                    $updateMsg = "Course Updated.";
-
-                    print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
-                } else {
-                    $myMsg = "There was a problem with the upload.";
+                        print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
+                    } else {
+                        $myMsg = "There was a problem with the upload.";
+                        header("Content-Type: text/json");
+                        print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
+                    }
+                }
+                else{
+                    $myMsg = "Upload a valid file i.e .htm or zip file!.";
                     header("Content-Type: text/json");
                     print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
                 }
-
                 if ($reimport == 1) {
 
                     deleteNonUpdate();
@@ -135,7 +140,7 @@ switch ($action) {
                 }
             }
 
-           // echo json_encode($responses);
+            // echo json_encode($responses);
         } catch (Exception $e) {
             echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
@@ -197,7 +202,7 @@ switch ($action) {
 
     case  UPLOADFOLDER:
         $folderName = filter_input(INPUT_GET, 'folder');
-        $folder = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/".$folderName."/";
+        $folder = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $folderName . "/";
         if (!file_exists($folder)) {
             if (!mkdir($folder, 0774, true) && !is_dir($folder)) {
                 throw new \RuntimeException(sprintf('Directory "%s" was not created', $folder));
@@ -209,26 +214,24 @@ switch ($action) {
             $type = $_FILES["file"]["type"];
             $name = explode(".", $filename);
             $docName = $name[0];
-            $myFile = $folder.$filename;
+            $myFile = $folder . $filename;
 
             if (!file_exists($myFile)) {
-            if (move_uploaded_file($source, $myFile)) {
+                if (move_uploaded_file($source, $myFile)) {
+                    $myMsg = "Your .zip file uploaded and unziped.";
+                    $updateMsg = "Course Updated.";
+                    print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
+
+                } else {
+                    $myMsg = "There was a problem with the upload.";
+                    header("Content-Type: text/json");
+                    print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
+                }
+            } else {
                 $myMsg = "Your .zip file uploaded and unziped.";
                 $updateMsg = "Course Updated.";
                 print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
-
             }
-            else{
-                $myMsg = "There was a problem with the upload.";
-                header("Content-Type: text/json");
-                print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
-            }
-        }
-            else{
-            $myMsg = "Your .zip file uploaded and unziped.";
-            $updateMsg = "Course Updated.";
-            print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
-        }
         }
         break;
 
@@ -314,7 +317,6 @@ function readUrlHeaders($contents)
 
     }
     sort($headings, SORT_NATURAL | SORT_FLAG_CASE);
-
 
     return cleanArray($headings, $contents);
 }
@@ -474,13 +476,17 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
         if (checkMp4Format($mp4, strip_tags($replace))) {
             // echo  strip_tags($replace);
             $videoLink = downloadVideo(strip_tags($replace), $mp4);
-            $replacement = "<a href='" . $videoLink . "'>Video Here</a>";
-            $str = str_replace($replace, $replacement, $str) . ".";
-
+            if (!empty($videoLink)) {
+                $replacement = "<a href='" . $videoLink . "'>Video Here</a>";
+                $str = str_replace($replace, $replacement, $str) . ".";
+            }
         } else if (checkMp3Format($mp3, strip_tags($replace))) {
+
             $link = downloadAudio(strip_tags($replace), $mp3);
-            $replacement = "<a href='" . $link . "'>Audio Here</a>";
-            $str = str_replace($replace, $replacement, $str) . ".";
+            if (!empty($link)) {
+                $replacement = "<a href='" . $link . "'>Audio Here</a>";
+                $str = str_replace($replace, $replacement, $str) . ".";
+            }
         } else if (strpos($replace, $youtube) !== false) {
             $embededVideo = str_replace("www.youtube.com/watch?v=", "www.youtube-nocookie.com/embed/", strip_tags($replace));
             $embededVideo = explode("&amp;", $embededVideo);
@@ -715,34 +721,33 @@ function xrmdir($dir)
 
 function readGoogleDocHtml($path, $docFolder, $check)
 {
-  $filename = explode( ".",$docFolder );
+    $filename = explode(".", $docFolder);
     $filename = $filename[0];
-    $filename = str_replace(' ', "%20" , $filename);
-        $contents = file_get_contents($path);
+    $filename = str_replace(' ', "%20", $filename);
+    $contents = file_get_contents($path);
 
-    if (strpos($contents, $filename."_files") !== false) {
-        $contents = str_replace($filename."_files", "/CourseFiles/documentFiles/" . $filename , $contents);
+    if (strpos($contents, $filename . "_files") !== false) {
+        $contents = str_replace($filename . "_files", "/CourseFiles/documentFiles/" . $filename, $contents);
         $response = [
             'response' => "uploadFiles",
             'text' => "Upload files"
         ];
         $responses[] = $response;
     }
-        // setting delimiters for links
-        $startDelimiter = '<a';
-        $endDelimiter = '</a>';
-        $contentsWithVideoAudio = getReplaceLinks($contents, $startDelimiter, $endDelimiter, false);
-        //remove opening user delimiters
-        $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
-        $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
-        $contentsWithVideoAudio = str_replace("&lt;%003", "", $contentsWithVideoAudio);
-        //remove closing user delimiters
-        $contentsWithVideoAudio = str_replace("&lt;iframe", "<iframe", $contentsWithVideoAudio);
-        $contentsWithVideoAudio = str_replace("/iframe&gt;", "/iframe>", $contentsWithVideoAudio);
-        if ($check) {
-             readHeaders($contentsWithVideoAudio);
-        }
-
+    // setting delimiters for links
+    $startDelimiter = '<a';
+    $endDelimiter = '</a>';
+    $contentsWithVideoAudio = getReplaceLinks($contents, $startDelimiter, $endDelimiter, false);
+    //remove opening user delimiters
+    $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
+    $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
+    $contentsWithVideoAudio = str_replace("&lt;%003", "", $contentsWithVideoAudio);
+    //remove closing user delimiters
+    $contentsWithVideoAudio = str_replace("&lt;iframe", "<iframe", $contentsWithVideoAudio);
+    $contentsWithVideoAudio = str_replace("/iframe&gt;", "/iframe>", $contentsWithVideoAudio);
+    if ($check) {
+        readHeaders($contentsWithVideoAudio);
+    }
 
 
 }
@@ -750,11 +755,28 @@ function readGoogleDocHtml($path, $docFolder, $check)
 function readGoogleDocZip($path, $docFolder, $check)
 {
     $contentsWithVideoAudio = '';
+    $content = "";
     $files = glob($path . '/*html');
+    $file = glob($path . '/*htm');
 
     if ($files) {
         $contents = file_get_contents($files[0]);
         $content = str_replace("images/image", "/CourseFiles/documentFiles/" . $docFolder . "/images/image", $contents);
+    }
+    else if ($file){
+        $contents = file_get_contents($file[0]);
+        $file = explode("/", $file[0]);
+        $file = explode(".",end($file));
+        $file = $file[0];
+        $file = str_replace(' ', "%20", $file);
+        if (strpos($contents, $file . "_files") !== false) {
+            $content = str_replace($file . "_files", "/CourseFiles/documentFiles/" .$docFolder."/". $file."_files", $contents);
+            $response = ['response' => "uploadFiles",'text' => "Upload files"];
+            $responses[] = $response;
+        }
+
+
+    }
 
         // setting delimiters for links
         $startDelimiter = '<a';
@@ -776,13 +798,13 @@ function readGoogleDocZip($path, $docFolder, $check)
             readUrlHeaders($contentsWithVideoAudio);
         }
 
-    }
+
 
 }
 
 function readHeaders($contents)
 {
-   global $headings;
+    global $headings;
     $heading_arrays = array('<h1,</h1>', '<h2,</h2>', '<h3,</h3>', '<h4,</h4>', '<h5,</h5>', '<h6,</h6>');
 
 
@@ -795,8 +817,6 @@ function readHeaders($contents)
     sort($headings, SORT_NATURAL | SORT_FLAG_CASE);
 
     cleanArray($headings, $contents);
-
-
 
 
 }
@@ -1056,9 +1076,9 @@ function getHeadingsWithContents($bodyContent, $content)
                     $contentPerChapter = $obj->content;
                     list($chapter_id, $chapter_name) = getHeadlineInformations($heading);
                     $string_lenghth = $contentPerChapter;
-                  //  $contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $contentPerChapter);
-                   // echo $chapter_id." == ". $chapter_name."<br>";
-                   $check = tableOfContents($obj->heading, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
+                    //  $contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $contentPerChapter);
+                    // echo $chapter_id." == ". $chapter_name."<br>";
+                    $check = tableOfContents($obj->heading, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
                 } else {
                     $last_obj = end($bodyContent);
                     $lastkey = $last_obj->heading;
@@ -1070,8 +1090,8 @@ function getHeadingsWithContents($bodyContent, $content)
                     $string_lenghth = $last_content;
                     list($last_chapter_id, $last_chapter_name) = getHeadlineInformations($lastkey);
                     $last_contentPerChapter = $last_content;
-                   // $last_contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $last_contentPerChapter);
-                   // echo $last_chapter_id." == ". $last_chapter_name;
+                    // $last_contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $last_contentPerChapter);
+                    // echo $last_chapter_id." == ". $last_chapter_name;
                     $check = tableOfContents($last_obj->heading, $last_chapter_id, $last_chapter_name, $last_contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
 
 
@@ -1429,199 +1449,199 @@ WHERE NOT  exists (select * from toc b WHERE  a.chapter_id=b.chapter_id)   AND m
 }
 
 
-    function refreshUpdate()
-    {
-        global $doc_id;
-        global $dbc;
-        $query_update = "UPDATE toc SET toUpdate=0  where doc_id= " . $doc_id;
-        $result = mysqli_query($dbc, $query_update) or die(mysqli_error($dbc));
+function refreshUpdate()
+{
+    global $doc_id;
+    global $dbc;
+    $query_update = "UPDATE toc SET toUpdate=0  where doc_id= " . $doc_id;
+    $result = mysqli_query($dbc, $query_update) or die(mysqli_error($dbc));
 
-        return $result;
+    return $result;
+}
+
+function getHeadlineInformations($string)
+{
+    $position = 0;
+    $chapter_id = "";
+    while (isValid_(substr($string, $position, 1))) {
+        $chapter_id .= substr($string, $position++, 1);
     }
 
-    function getHeadlineInformations($string)
-    {
-        $position = 0;
-        $chapter_id = "";
-        while (isValid_(substr($string, $position, 1))) {
-            $chapter_id .= substr($string, $position++, 1);
-        }
-
-        return array($chapter_id, substr($string, $position));
-    }
+    return array($chapter_id, substr($string, $position));
+}
 
 //function to validate string
-    function isValid_($string)
-    {
-        return is_numeric($string) || ctype_punct($string);
-    }
+function isValid_($string)
+{
+    return is_numeric($string) || ctype_punct($string);
+}
 
 // Reading the headings of the file
-    function getContents($str, $startDelimiter, $endDelimiter)
-    {
-        $contents = '';
+function getContents($str, $startDelimiter, $endDelimiter)
+{
+    $contents = '';
 
-        $startDelimiterLength = strlen($startDelimiter);
-        $endDelimiterLength = strlen($endDelimiter);
-        $startFrom = $contentStart = $contentEnd = 0;
-        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
-            $contentStart += $startDelimiterLength;
-            $contentEnd = strpos($str, $endDelimiter, $contentStart);
-            if (false === $contentEnd) {
-                break;
-            }
-            $contents .= substr($str, $contentStart, $contentEnd - $contentStart);
-            $startFrom = $contentEnd + $endDelimiterLength;
+    $startDelimiterLength = strlen($startDelimiter);
+    $endDelimiterLength = strlen($endDelimiter);
+    $startFrom = $contentStart = $contentEnd = 0;
+    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+        $contentStart += $startDelimiterLength;
+        $contentEnd = strpos($str, $endDelimiter, $contentStart);
+        if (false === $contentEnd) {
+            break;
         }
-
-        return $contents;
+        $contents .= substr($str, $contentStart, $contentEnd - $contentStart);
+        $startFrom = $contentEnd + $endDelimiterLength;
     }
 
-    function getUrlHeadings($str, $delimiters)
-    {
-        global $headings;
+    return $contents;
+}
 
-        $startEndDelimiters = explode(",", $delimiters);
-        $startDelimiter = '<' . $startEndDelimiters[0];
+function getUrlHeadings($str, $delimiters)
+{
+    global $headings;
 
-        $endDelimiter = '<' . $startEndDelimiters[1] . '>';
-        $startDelimiterLength = strlen($startDelimiter);
-        $endDelimiterLength = strlen($endDelimiter);
-        $startFrom = $contentStart = $contentEnd = 0;
+    $startEndDelimiters = explode(",", $delimiters);
+    $startDelimiter = '<' . $startEndDelimiters[0];
 
-        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+    $endDelimiter = '<' . $startEndDelimiters[1] . '>';
+    $startDelimiterLength = strlen($startDelimiter);
+    $endDelimiterLength = strlen($endDelimiter);
+    $startFrom = $contentStart = $contentEnd = 0;
 
-            $contentStart += $startDelimiterLength;
-            $contentEnd = strpos($str, $endDelimiter, $contentStart);
-            if (false === $contentEnd) {
-                break;
-            }
-            if ($startDelimiter == '<h1') {
-                $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
-            }
+    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
 
-            if ($startDelimiter == '<h2') {
-                $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
-            }
-
-            if ($startDelimiter == '<h3') {
-                $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
-            }
-
-            if ($startDelimiter == '<h4') {
-                $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
-            }
-
-            if ($startDelimiter == '<h5') {
-                $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
-            }
-
-            if ($startDelimiter == '<h6') {
-                $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
-            }
-
-            $startFrom = $contentEnd + $endDelimiterLength;
+        $contentStart += $startDelimiterLength;
+        $contentEnd = strpos($str, $endDelimiter, $contentStart);
+        if (false === $contentEnd) {
+            break;
+        }
+        if ($startDelimiter == '<h1') {
+            $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
         }
 
-        // return $contents;
+        if ($startDelimiter == '<h2') {
+            $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
+        }
+
+        if ($startDelimiter == '<h3') {
+            $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
+        }
+
+        if ($startDelimiter == '<h4') {
+            $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
+        }
+
+        if ($startDelimiter == '<h5') {
+            $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
+        }
+
+        if ($startDelimiter == '<h6') {
+            $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
+        }
+
+        $startFrom = $contentEnd + $endDelimiterLength;
     }
+
+    // return $contents;
+}
 
 //read Heading with css
-    function getHeadings($str, $delimiters, $startclose, $endclose)
-    {
+function getHeadings($str, $delimiters, $startclose, $endclose)
+{
 
-        global $headings;
+    global $headings;
 
-        $startEndDelimiters = explode(",", $delimiters);
-        $startDelimiter = $startclose . $startEndDelimiters[0];
+    $startEndDelimiters = explode(",", $delimiters);
+    $startDelimiter = $startclose . $startEndDelimiters[0];
 
-        $endDelimiter = $startclose . $startEndDelimiters[1] . $endclose;
-        $startDelimiterLength = strlen($startDelimiter);
-        $endDelimiterLength = strlen($endDelimiter);
-        $startFrom = $contentStart = $contentEnd = 0;
+    $endDelimiter = $startclose . $startEndDelimiters[1] . $endclose;
+    $startDelimiterLength = strlen($startDelimiter);
+    $endDelimiterLength = strlen($endDelimiter);
+    $startFrom = $contentStart = $contentEnd = 0;
 
-        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
 
-            $contentStart += $startDelimiterLength;
-            $contentEnd = strpos($str, $endDelimiter, $contentStart);
-            if (false === $contentEnd) {
-                break;
-            }
-            if ($startDelimiter == '<h1') {
+        $contentStart += $startDelimiterLength;
+        $contentEnd = strpos($str, $endDelimiter, $contentStart);
+        if (false === $contentEnd) {
+            break;
+        }
+        if ($startDelimiter == '<h1') {
 
-                $head = '<h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
-                $head = strip_tags($head);
-                $head = trim($head, "\xC2\xA0");
-                $head = str_replace('&nbsp;', '', $head);
-                $head = str_replace(preg_match('/\s/', $head), '', $head);
-                if ($head != '' || strpos($head, '&nbsp;') === false) {
-                    $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
-
-                }
+            $head = '<h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
+            $head = strip_tags($head);
+            $head = trim($head, "\xC2\xA0");
+            $head = str_replace('&nbsp;', '', $head);
+            $head = str_replace(preg_match('/\s/', $head), '', $head);
+            if ($head != '' || strpos($head, '&nbsp;') === false) {
+                $headings[] = $contentStart . '<=><h1' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h1>';
 
             }
 
-            if ($startDelimiter == '<h2') {
-                $head = '<h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
-                $head = strip_tags($head);
-                $head = trim($head, "\xC2\xA0");
-                $head = str_replace('&nbsp;', '', $head);
-                $head = str_replace(preg_match('/\s/', $head), '', $head);
-                if ($head != '' || strpos($head, '&nbsp;') === false) {
-                    $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
-
-                }
-            }
-
-            if ($startDelimiter == '<h3') {
-                $head = '<h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
-                $head = strip_tags($head);
-                $head = trim($head, "\xC2\xA0");
-                $head = str_replace('&nbsp;', '', $head);
-                $head = str_replace(preg_match('/\s/', $head), '', $head);
-                if ($head != '' || strpos($head, '&nbsp;') === false) {
-                    $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';;
-
-                }
-            }
-
-            if ($startDelimiter == '<h4') {
-                $head = '<h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
-                $head = strip_tags($head);
-                $head = trim($head, "\xC2\xA0");
-                $head = str_replace('&nbsp;', '', $head);
-                $head = str_replace(preg_match('/\s/', $head), '', $head);
-                if ($head != '' || strpos($head, '&nbsp;') === false) {
-                    $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
-
-                }
-            }
-
-            if ($startDelimiter == '<h5') {
-                $head = '<h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
-                $head = strip_tags($head);
-                $head = trim($head, "\xC2\xA0");
-                $head = str_replace('&nbsp;', '', $head);
-                $head = str_replace(preg_match('/\s/', $head), '', $head);
-                if ($head != '' || strpos($head, '&nbsp;') === false) {
-                    $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
-
-                }
-            }
-
-            if ($startDelimiter == '<h6') {
-                $head = '<h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
-                $head = strip_tags($head);
-                $head = trim($head, "\xC2\xA0");
-                $head = str_replace('&nbsp;', '', $head);
-                $head = str_replace(preg_match('/\s/', $head), '', $head);
-                if ($head != '' || strpos($head, '&nbsp;') === false) {
-                    $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
-
-                }
-            }
-
-            $startFrom = $contentEnd + $endDelimiterLength;
         }
 
+        if ($startDelimiter == '<h2') {
+            $head = '<h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
+            $head = strip_tags($head);
+            $head = trim($head, "\xC2\xA0");
+            $head = str_replace('&nbsp;', '', $head);
+            $head = str_replace(preg_match('/\s/', $head), '', $head);
+            if ($head != '' || strpos($head, '&nbsp;') === false) {
+                $headings[] = $contentStart . '<=><h2' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h2>';
+
+            }
+        }
+
+        if ($startDelimiter == '<h3') {
+            $head = '<h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';
+            $head = strip_tags($head);
+            $head = trim($head, "\xC2\xA0");
+            $head = str_replace('&nbsp;', '', $head);
+            $head = str_replace(preg_match('/\s/', $head), '', $head);
+            if ($head != '' || strpos($head, '&nbsp;') === false) {
+                $headings[] = $contentStart . '<=><h3' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h3>';;
+
+            }
+        }
+
+        if ($startDelimiter == '<h4') {
+            $head = '<h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
+            $head = strip_tags($head);
+            $head = trim($head, "\xC2\xA0");
+            $head = str_replace('&nbsp;', '', $head);
+            $head = str_replace(preg_match('/\s/', $head), '', $head);
+            if ($head != '' || strpos($head, '&nbsp;') === false) {
+                $headings[] = $contentStart . '<=><h4' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h4>';
+
+            }
+        }
+
+        if ($startDelimiter == '<h5') {
+            $head = '<h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
+            $head = strip_tags($head);
+            $head = trim($head, "\xC2\xA0");
+            $head = str_replace('&nbsp;', '', $head);
+            $head = str_replace(preg_match('/\s/', $head), '', $head);
+            if ($head != '' || strpos($head, '&nbsp;') === false) {
+                $headings[] = $contentStart . '<=><h5' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h5>';
+
+            }
+        }
+
+        if ($startDelimiter == '<h6') {
+            $head = '<h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
+            $head = strip_tags($head);
+            $head = trim($head, "\xC2\xA0");
+            $head = str_replace('&nbsp;', '', $head);
+            $head = str_replace(preg_match('/\s/', $head), '', $head);
+            if ($head != '' || strpos($head, '&nbsp;') === false) {
+                $headings[] = $contentStart . '<=><h6' . substr($str, $contentStart, $contentEnd - $contentStart) . '</h6>';
+
+            }
+        }
+
+        $startFrom = $contentEnd + $endDelimiterLength;
     }
+
+}
