@@ -1218,7 +1218,7 @@ function createCourse($document_id)
         if ($domainname != "https://education.nts.nl") {
 
             $dateTime = date("d.m.Y") . " " . date("h:i:sa");
-            $query_insert_document = 'INSERT INTO document (doc_name,document_url,local_course_id,date_time,details) VALUES ("' . $doc_name . '", "' . $doc_url . '", "' . $course_id . '", "' . $dateTime . '","' . $details . '")
+            $query_insert_document = 'INSERT INTO documents (doc_name,document_url,local_course_id,date_time,details) VALUES ("' . $doc_name . '", "' . $doc_url . '", "' . $course_id . '", "' . $dateTime . '","' . $details . '")
     ON DUPLICATE KEY UPDATE local_course_id=values(local_course_id)';
 
             $result = mysqli_query($remoteDbc, $query_insert_document) or die(mysqli_error($remoteDbc));
