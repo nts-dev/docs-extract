@@ -687,14 +687,15 @@ function deleteCourse(id, doc_name) {
                     doc_name = '';
                 }
                 $.get(baseURL + "controller/documents.php?action=5&id=" + id + "&doc_name=" + doc_name, function (data) {
-
                     if (data !== null) {
                         dhtmlx.message({title: 'Success', expire: 2000, text: data.text});
-                        grid_1.deleteRow(id);
-                        tab_2.detachObject(true);
-                        grid_2.clearAll();
+
                         tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
                         deleteCourseArchive(id);
+
+                        if(data.courseid) {
+                            deleteMoodle(data.courseid, doc_name,id,data.domain);
+                        }
                     } else {
                         dhtmlx.alert({title: 'Error', text: data});
                     }
@@ -710,6 +711,39 @@ function deleteCourse(id, doc_name) {
     });
 }
 
+function deleteMoodle(courseid,doc_name,id,domain){
+    dhtmlx.confirm({
+        title: "Delete Course",
+        type: "confirm-warning",
+        text: "Do you want to delete " + doc_name + " course in moodle?",
+        callback: function (ok) {
+            if (ok) {
+                main_layout.progressOn();
+                $.get(baseURL + "controller/documents.php?action=15&id=" + id +"&courseid="+ courseid+"&domain="+ domain, function (data) {
+                    main_layout.progressOff();
+                    if (data !== null) {
+                        dhtmlx.message({title: 'Success', expire: 2000, text: data.text});
+                    } else {
+                        dhtmlx.alert({title: 'Error', text: data});
+                    }
+                }, "json");
+                grid_1.deleteRow(id);
+                tab_2.detachObject(true);
+                grid_2.clearAll();
+            } else {
+                dhtmlx.message({
+                    title: 'Success',
+                    expire: 2000,
+                    text: "Process cancelled!"
+                });
+                grid_1.deleteRow(id);
+                tab_2.detachObject(true);
+                grid_2.clearAll();
+            }
+        }
+    });
+
+}
 function deleteCourseArchive(id) {
 
     $.get(baseURL + "controller/achived_chapters.php?action=6&id=" + id, function (data) {

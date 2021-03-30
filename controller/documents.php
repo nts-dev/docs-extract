@@ -1,6 +1,7 @@
 <?php
 
 include_once 'config.php';
+require_once 'curl.php';
 
 $action = $_GET['action'];
 
@@ -9,10 +10,9 @@ switch ($action) {
 
     case 1:
 
-        $query = "SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
-FROM document
-left JOIN course_server ON document.id = course_server.document_id
-LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc";
+        $query = 'SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
+       FROM document LEFT JOIN course_server ON document.id = course_server.document_id
+       LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc';
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
         header('Content-type:text/xml;charset=ISO-8859-1;');
         echo '<?xml version="1.0"?>';
@@ -25,16 +25,6 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
             echo '<row id="' . $row['id'] . '">';
             echo "<cell><![CDATA[" . $row["id"] . "]]></cell>";
             echo "<cell><![CDATA[" . $row["doc_name"] . "]]></cell>";
-
-//            if ($row["name"])
-//                echo "<cell><![CDATA[" . $row["name"] . "]]></cell>";
-//            else
-//                echo "<cell><![CDATA[" . $server . "]]></cell>";
-//
-//            if ($row["document_url"])
-//                echo "<cell><![CDATA[" . $row["document_url"] . "]]></cell>";
-//            else
-//                echo "<cell><![CDATA[" . $url . "]]></cell>";
 
             if ($row["local_course_id"])
                 echo "<cell><![CDATA[" . $row["local_course_id"] . "]]></cell>";
@@ -92,7 +82,16 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
     case 5:
         $id = $_GET['id'];
         $name = $_GET['doc_name'];
+        $documents_query = "SELECT document.doc_name,course_server.moodle_course_id,course_server.server_id,moodle_servers.name
+              FROM document
+              LEFT JOIN course_server ON document.id = course_server.document_id
+              LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE document.id=" . $id;
 
+        $result = mysqli_query($dbc, $documents_query) or die(mysqli_error($dbc));
+
+        $documents = mysqli_fetch_array($result);
+        $courseid = $documents['moodle_course_id'];
+        list($token, $domain) = getToken($id);
         $query_quiz = "Delete question, question_Page, choices
                     FROM document document
                      JOIN toc ON document.id = toc.doc_id
@@ -121,9 +120,11 @@ LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY
                     $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $name;
                     if (file_exists($path))
                         xrmdir($path);
-                         $response = [
+                    $response = [
                         'response' => true,
                         'text' => 'Document Deleted!!',
+                        'courseid' => $courseid,
+                        'domain' => $domain
                     ];
                     echo json_encode($response);
                 }
@@ -373,6 +374,31 @@ ON DUPLICATE KEY UPDATE content=values(content)';
             ];
         }
         echo json_encode($data);
+        break;
+
+    case 15:
+        $id = $_GET['courseid'];
+        $document_id = $_GET['id'];
+        $domain = $_GET['domain'];
+        $obj = [
+            'course' => $id
+        ];
+        $curl = new curl;
+        $serverurl = $domain . "/moosh.php?action=12";
+        $resp = $curl->post($serverurl, $obj);
+        $response = json_decode($resp);
+        if ($response) {
+            $data = [
+                'response' => true,
+                'text' => 'Course Deleted Successfully!',
+            ];
+        } else {
+            $data = [
+                'response' => false,
+                'text' => 'An error Occured, while Deleting',
+            ];
+        }
+        echo json_encode($data);
 
         break;
 
@@ -393,4 +419,23 @@ function xrmdir($dir)
         }
     }
     rmdir($dir);
+}
+function getToken($doc_id)
+{
+    global $dbc;
+    $query = "SELECT moodle_servers.path,moodle_servers.token
+              FROM document
+              LEFT JOIN course_server ON document.id = course_server.document_id
+              LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE document.id=" . $doc_id;
+    $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+    $token = '';
+    $domain = '';
+
+    if ($row = mysqli_fetch_assoc($result)) {
+
+        $token = $row["token"];
+        $domain = $row["path"];
+
+    }
+    return array($token, $domain);
 }

@@ -435,7 +435,6 @@ function addModulePageLessonSection($ids, $doc_id)
         $Mdl_section_id = $row['lesson_id'];
         $course_id = $row["moodle_course_id"];
 
-
         $dataObject = [
             'page_name' => $name,
             'section_id' => $section_id,
@@ -521,7 +520,7 @@ function addModulePageLessonSection($ids, $doc_id)
                     $lessonObject = [
                         'lessonid' => $lesson_id,
                         'title' => $row['chapter_id'] . " " . $row['chapter'],
-                        'contents' => $row["uppercss"] . $row["content"] . $row["lowercss"],
+                        'contents' => $row["uppercss"] . $content . $row["lowercss"],
                     ];
 
                     $response = [
@@ -533,7 +532,9 @@ function addModulePageLessonSection($ids, $doc_id)
                     $lessonPageId = insertLessonPage($lessonObject, $id, $module_id);
 
                     if ($lessonPageId) {
-                        updateMoodle_idonInsert($lessonPageId, $lesson_id, $id, $moduleid);
+                        updateMoodle_idonInsert($lessonPageId, $lesson_id, $id, $module_id);
+
+                        UpdateLessonPage($lessonPageId, $content, $name, true, $module_id);
                         $response = [
                             'response' => true,
                             'text' => $row['chapter_id'] . " " . $row['chapter'] . ' LessonPage Inserted',
@@ -792,7 +793,7 @@ function searchLessonids($toAddLessonPages)
             PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
         $lesson = $lesson[0];
 
-        $query = 'SELECT  toc.lesson_id  FROM toc WHERE toc.sort_id < "' . $obj->sort_id . '" AND toc.doc_id="' . $obj->doc_id . '"AND toc.section_id="' . $obj->section . '" AND chapter_id = "' . $lesson . '"';
+        $query = 'SELECT  toc.lesson_id,toc.module_id  FROM toc WHERE toc.sort_id < "' . $obj->sort_id . '" AND toc.doc_id="' . $obj->doc_id . '"AND toc.section_id="' . $obj->section . '" AND chapter_id = "' . $lesson . '"';
         $results = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($rows = mysqli_fetch_assoc($results)) {
@@ -820,33 +821,46 @@ function addlessonpages($toAddLesson_ids)
 
     $lesson_id = 0;
 
+global $updateModules;
     $toAddLesson_ids = array_filter($toAddLesson_ids);
     sort($toAddLesson_ids);
     foreach ($toAddLesson_ids as $obj) {
+    $id= $obj->id;
+    $module_id = $obj->module_id;
+    $content = $obj->content;
+    $name = $obj->name;
+    $lesson_id= $obj->lesson_id;
 
         if ($obj->lesson_id != '') {
             $lessonObject = [
-                'lessonid' => $obj->lesson_id,
-                'title' => $obj->name,
-                'contents' => $obj->content,
+                'lessonid' => $lesson_id,
+                'title' => $name,
+                'contents' => $content,
             ];
-            $response = insertLessonPage($lessonObject, $obj->id);
-            updateMoodle_idonInsert($response, $obj->lesson_id, $obj->id, $obj->module_id);
+            $response = insertLessonPage($lessonObject, $id);
+            updateMoodle_idonInsert($response, $lesson_id, $id, $module_id);
+
+            UpdateLessonPage($response, $content, $name, true, $module_id);
+            $response = ['response' => true,'text' => $name . '  Inserted',];
+            $updateModules[] = $response;
 
         } else {
             if ($lesson_id) {
-                // echo $lesson_id . "=>" . $obj->name;
+
                 $lessonObject = [
                     'lessonid' => $lesson_id,
-                    'title' => $obj->name,
-                    'contents' => $obj->content,
+                    'title' => $name,
+                    'contents' => $content,
                 ];
-                $response = insertLessonPage($lessonObject, $obj->id);
-                updateMoodle_idonInsert($response, $lesson_id, $obj->id, $obj->module_id);
+                $response = insertLessonPage($lessonObject, $id);
+                updateMoodle_idonInsert($response, $lesson_id, $id, $module_id);
+                UpdateLessonPage($response, $content, $name, true, $module_id);
+
+                $response = ['response' => true,'text' => $name . ' Inserted',];
+                $updateModules[] = $response;
             }
         }
-        $responses['data'] = array('response' => true, 'text' => 'LessonPage inserted!');
-        $lesson_id = $obj->lesson_id;
+
 
     }
 
@@ -1291,7 +1305,6 @@ function getImageSource($Content, $module_id, $page_id, $isPage)
             $link = str_replace("%20", " " , $link);
             $filename = 'images' . $counter . '.jpg';
             if ($filename) {
-                // echo $old_src;
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $link, $isPage);
 
                 $Content = str_replace($old_src, $new_src_url, $Content);
@@ -1396,6 +1409,7 @@ function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
     $curl = new curl;
     $serverurl = $domainname . "/moosh.php?action=11";
     $resp = $curl->post($serverurl, $obj);
+
     $res = json_decode($resp);
        return $res->image;
 }
@@ -1888,7 +1902,10 @@ function UpdateLessonPage($pageid, $pageContent, $name, $check, $module_id)
 {
 
     global $domainname, $wstoken, $updateModules;
+
+
     $Content = getImageSource($pageContent, $module_id, $pageid, false);
+
     if (!empty($Content))
         $Content = getAudioSource($Content, $module_id, $pageid, false);
 

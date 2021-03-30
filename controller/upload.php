@@ -72,12 +72,6 @@ switch ($action) {
                     }
                 }
 
-//                $continue = strtolower($name[1]) == 'zip' ? true : false;
-//                if (!$continue) {
-//                    $myMsg = "Please upload a valid .zip file.";
-//                }
-
-                /* PHP current path */
                 $path_html = dirname(__FILE__) . '/';
                 $filenoext = basename($filename, '.zip');
                 $filenoext = basename($filenoext, '.ZIP');
