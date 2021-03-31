@@ -82,7 +82,7 @@ switch ($action) {
     case 5:
         $id = $_GET['id'];
         $name = $_GET['doc_name'];
-        $documents_query = "SELECT document.doc_name,course_server.moodle_course_id,course_server.server_id,moodle_servers.name
+        $documents_query = "SELECT document.doc_name,course_server.moodle_course_id,course_server.server_id,moodle_servers.name,document.local_course_id
               FROM document
               LEFT JOIN course_server ON document.id = course_server.document_id
               LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id WHERE document.id=" . $id;
@@ -91,6 +91,9 @@ switch ($action) {
 
         $documents = mysqli_fetch_array($result);
         $courseid = $documents['moodle_course_id'];
+		$remoteId = $documents['local_course_id'];
+		deleteRemoteCourse($remoteId);
+		
         list($token, $domain) = getToken($id);
         $query_quiz = "Delete question, question_Page, choices
                     FROM document document
@@ -120,6 +123,9 @@ switch ($action) {
                     $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $name;
                     if (file_exists($path))
                         xrmdir($path);
+					
+					 
+					 
                     $response = [
                         'response' => true,
                         'text' => 'Document Deleted!!',
@@ -387,18 +393,8 @@ ON DUPLICATE KEY UPDATE content=values(content)';
         $serverurl = $domain . "/moosh.php?action=12";
         $resp = $curl->post($serverurl, $obj);
         $response = json_decode($resp);
-        if ($response) {
-            $data = [
-                'response' => true,
-                'text' => 'Course Deleted Successfully!',
-            ];
-        } else {
-            $data = [
-                'response' => false,
-                'text' => 'An error Occured, while Deleting',
-            ];
-        }
-        echo json_encode($data);
+      
+        echo json_encode($response);
 
         break;
 
@@ -438,4 +434,12 @@ function getToken($doc_id)
 
     }
     return array($token, $domain);
+}
+function deleteRemoteCourse($id){
+	
+	$remoteDbc = mysqli_connect('83.98.243.187', 'root', 'kenya1234', 'moodle_doc_db');
+      if ($remoteDbc) {
+        $query = "DELETE FROM documents WHERE id  =" . $id;
+         $result = mysqli_query($remoteDbc, $query) or die(mysqli_error($remoteDbc));
+}
 }

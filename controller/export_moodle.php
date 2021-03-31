@@ -1223,7 +1223,12 @@ function createCourse($document_id)
 
             $result = mysqli_query($remoteDbc, $query_insert_document) or die(mysqli_error($remoteDbc));
             $docid = mysqli_insert_id($remoteDbc);
+			
+			
             if ($docid) {
+				$updatelocalCourse_id = "UPDATE document SET local_course_id = ". $docid . " WHERE document.id = ".$document_id;
+				mysqli_query($dbc, $updatelocalCourse_id) or die(mysqli_error($dbc));
+				
                 $updateLocal = 'INSERT INTO course_server (document_id,server_id) VALUES (' . $docid . ',' . $server_id . ')
             ON DUPLICATE KEY UPDATE document_id=values(document_id)';
                 $updateLocalResult = mysqli_query($remoteDbc, $updateLocal);

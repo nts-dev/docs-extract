@@ -42,7 +42,7 @@ grid_1 = a.attachGrid();
 grid_1.setSkin('dhx_web');
 grid_1.setImagePath('plugins/dhtmlxsuite4/skins/web/imgs/');
 grid_1.setIconsPath('./codebase/imgs/');
-grid_1.setHeader(["ID", "Name", "Local Course ID"]);
+grid_1.setHeader(["ID", "Name", "Remote ID"]);
 grid_1.setColTypes("ro,ro,ro");
 grid_1.setColSorting('str,str,str');
 grid_1.setInitWidthsP('15,*,25');
@@ -684,7 +684,7 @@ function deleteCourse(id, doc_name) {
             if (ok) {
                 var localId = grid_1.cells(id, 2).getValue();
                 if (localId != 0 || localId != '') {
-                    doc_name = '';
+                    
                 }
                 $.get(baseURL + "controller/documents.php?action=5&id=" + id + "&doc_name=" + doc_name, function (data) {
                     if (data !== null) {
@@ -721,12 +721,14 @@ function deleteMoodle(courseid,doc_name,id,domain){
                 main_layout.progressOn();
                 $.get(baseURL + "controller/documents.php?action=15&id=" + id +"&courseid="+ courseid+"&domain="+ domain, function (data) {
                     main_layout.progressOff();
-                    if (data !== null) {
-                        dhtmlx.message({title: 'Success', expire: 2000, text: data.text});
-                    } else {
-                        dhtmlx.alert({title: 'Error', text: data});
-                    }
-                }, "json");
+                    for (var item in data) {
+            if (data[item].response) {
+                dhtmlx.message({title: 'Success', expire: 60000, text: data[item].text});
+            } else {
+                dhtmlx.alert({title: 'Error!', text: data[item].text});
+            }
+					}
+					}, "json");
                 grid_1.deleteRow(id);
                 tab_2.detachObject(true);
                 grid_2.clearAll();
