@@ -529,12 +529,12 @@ function addModulePageLessonSection($ids, $doc_id)
                     ];
                     $updateModules[] = $response;
 
-                    $lessonPageId = insertLessonPage($lessonObject, $id, $module_id);
+                    $lessonPageId = insertLessonPage($lessonObject, $id, $moduleid);
 
                     if ($lessonPageId) {
-                        updateMoodle_idonInsert($lessonPageId, $lesson_id, $id, $module_id);
+                        updateMoodle_idonInsert($lessonPageId, $lesson_id, $id, $moduleid);
 
-                        UpdateLessonPage($lessonPageId, $content, $name, true, $module_id);
+                        UpdateLessonPage($lessonPageId, $content, $name, true, $moduleid);
                         $response = [
                             'response' => true,
                             'text' => $row['chapter_id'] . " " . $row['chapter'] . ' LessonPage Inserted',

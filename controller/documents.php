@@ -92,6 +92,8 @@ switch ($action) {
         $documents = mysqli_fetch_array($result);
         $courseid = $documents['moodle_course_id'];
 		$remoteId = $documents['local_course_id'];
+
+		if(!empty($remoteId))
 		deleteRemoteCourse($remoteId);
 		
         list($token, $domain) = getToken($id);

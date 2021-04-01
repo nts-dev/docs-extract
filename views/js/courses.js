@@ -277,7 +277,8 @@ function openUploadWindow(reimport, doc_id) {
     }
 
     combo_server.load(baseURL + "controller/chapters.php?action=14&id=" + doc_id, function () {
-        server_id = combo_server.getSelectedValue();
+		server_id = combo_server.getSelectedValue();
+		
         window_4.progressOff();
         if (!server_id) {
             dhtmlx.alert({
@@ -286,10 +287,15 @@ function openUploadWindow(reimport, doc_id) {
                 text: "Please add Moodle server to proceed!"
             });
         }
-        var myUploader = form_2.getUploader("myFiles");
-        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id + "&user_id=" + user_id);
     });
 
+		combo_server.attachEvent("onSelectionChange", function(){
+			server_id = combo_server.getSelectedValue();
+			
+		 });
+		 
+		   var myUploader = form_2.getUploader("myFiles");
+        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id + "&user_id=" + user_id);
     form_2.attachEvent("onUploadFile",function(realName,serverName){
         if (getExtension(realName)=='htm') {
                     var val = openUploadFolderWindow(realName);
@@ -686,16 +692,22 @@ function deleteCourse(id, doc_name) {
                 if (localId != 0 || localId != '') {
                     
                 }
+				main_layout.progressOn();
                 $.get(baseURL + "controller/documents.php?action=5&id=" + id + "&doc_name=" + doc_name, function (data) {
                     if (data !== null) {
                         dhtmlx.message({title: 'Success', expire: 2000, text: data.text});
-
-                        tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
+                              main_layout.progressOff();
+                              tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
+						      grid_1.deleteRow(id);
+                              tab_2.detachObject(true);
+                              grid_2.clearAll();
                         deleteCourseArchive(id);
-
                         if(data.courseid) {
                             deleteMoodle(data.courseid, doc_name,id,data.domain);
                         }
+						else{
+							  
+						}
                     } else {
                         dhtmlx.alert({title: 'Error', text: data});
                     }
