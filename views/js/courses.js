@@ -288,7 +288,6 @@ function openUploadWindow(reimport, doc_id) {
             });
         }
     });
-
 		combo_server.attachEvent("onSelectionChange", function(){
 			server_id = combo_server.getSelectedValue();
 			

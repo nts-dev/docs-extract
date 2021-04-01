@@ -14,7 +14,6 @@ toolbar_2.attachEvent('onClick', onToolbar2Click);
 grid_2 = cell_1.attachGrid();
 grid_2.setSkin('dhx_web');
 grid_2.setImagePath('plugins/dhtmlxsuite4/skins/web/imgs/');
-//grid_2.setImagePath('plugins/dhtmlxsuite5/skins/terrace/imgs/');
 grid_2.setIconset("fontawesome");
 grid_2.setHeader(["Name", "Update", "Updated", "Changed", "Inserted"]);
 grid_2.setColTypes("tree,ch,icon,icon,icon");
@@ -42,9 +41,9 @@ type: "fieldset",
     {type:"input",name:"url",label:"Course URL/link",value: "",
         value:"", rows:3,
         note:{text:"Google document Course link."}},
-    {type:"input",name:"local_id",label:"Local Course ID",value: "",
+    {type:"input",name:"local_id",label:"Remote ID",value: "",
         value:"",
-        note:{text:"Local course ID."}},
+        note:{text:"Remote ID."}},
     {type:"input",name:"emp_id",label:"Employee ID",value: "",
         value:"",
         note:{text:"Who Added the Course."}},
