@@ -293,9 +293,10 @@ function openUploadWindow(reimport, doc_id) {
 			server_id = combo_server.getSelectedValue();
 			
 		 });
-		 
-		   var myUploader = form_2.getUploader("myFiles");
+    form_2.attachEvent("onFileAdd",function(realName){
+        var myUploader = form_2.getUploader("myFiles");
         myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id + "&user_id=" + user_id);
+    });
     form_2.attachEvent("onUploadFile",function(realName,serverName){
         if (getExtension(realName)=='htm') {
                     var val = openUploadFolderWindow(realName);
