@@ -22,6 +22,9 @@ grid_2.setInitWidthsP('50,*,*,*,*');
 grid_2.init();
 
 grid_2.attachEvent('onRowSelect', onGrid2RowSelect);
+grid_2.attachEvent("onEditCell", onEditCell);
+
+
 var size = formLayout.getWidth();
 
 var form_data  = [
@@ -154,7 +157,19 @@ function onGrid2RowSelect(id, ind) {
     form_3.setItemValue("content", "");
 
 }
+function onEditCell(stage,rId,cInd,nValue,oValue){
+    if(stage===2) {
+        $.get(baseURL + "controller/chapters.php?action=15&id=" + rId + "&nValue="+nValue, function (data) {
 
+            if (data !== null) {
+                dhtmlx.message({title: 'Success',expire: 6000,text: data.text});
+                grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id, true, true);
+            }
+            else
+                dhtmlx.message({title: 'Success',expire: 6000,text: data.text});
+        }, 'json');
+    }
+}
 
 function updateModules() {
 

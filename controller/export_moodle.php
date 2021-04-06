@@ -449,11 +449,11 @@ function addModulePageLessonSection($ids, $doc_id)
 
 
                 if ($row['bChanged'] > 0 || $row['bUpdate'] > 0) {
-                    $sectionname = $row['chapter_id'] . " " . $row['chapter'];
 
-                    updateTopicName($Mdl_section_id, $sectionname, $moodle_id, $id, true);
 
-                    //UpdatePage($moodle_id, $content, $sectionname,$module_id);
+                    updateTopicName($Mdl_section_id, $name, $moodle_id, $id, true);
+
+                   UpdatePage($moodle_id, $content, $name,$module_id);
 
                     UpdatePageNameContent($moodle_id, $name, $content, $moodle_id);
                 }

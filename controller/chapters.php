@@ -505,12 +505,45 @@ switch ($action) {
         }
         echo '</complete>';
 
+        break;
 
+    case 15:
+        $rowId= $_GET['id'];
+        $nValue = $_GET["nValue"];
+        $nValue = getHeadlineInformations($nValue);
+        $query = "UPDATE toc SET chapter = '".$nValue."',bChanged=1 WHERE id=".$rowId;
+        $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+        if($result) {
+            $response = [
+                'response' => true,
+                'text' => "Row Updated Successfully"
+            ];
+        }
+        else{
+            $response = [
+                'response' => true,
+                'text' => "Error Occured, try again!"
+            ];
+        }
+
+        echo json_encode($response);
 
         break;
 }
 
-
+function getHeadlineInformations($string)
+{
+    $position = 0;
+    $chapter_id = "";
+    while (isValid_(substr($string, $position, 1))) {
+        $chapter_id .= substr($string, $position++, 1);
+    }
+    return  substr($string, $position);
+}
+function isValid_($string)
+{
+    return is_numeric($string) || ctype_punct($string);
+}
 
 function treeDir($id,$stat)
 {
