@@ -1,6 +1,7 @@
 <?php
 
 ini_set('display_errors', '0');
+error_reporting(E_ERROR | E_PARSE);
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: text/html; charset=utf-8');
 ini_set('max_execution_time', 0);
@@ -47,7 +48,6 @@ $fileCounter = 0;
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
 
 switch ($action) {
-
     case IMPORTZIP:
         try {
             $reimport = filter_input(INPUT_GET, 'reimport');
@@ -125,7 +125,6 @@ switch ($action) {
                     print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
                 }
                 if ($reimport == 1) {
-
                     deleteNonUpdate();
                     bDelete();
                     bChanged();
@@ -160,16 +159,12 @@ switch ($action) {
                 break;
             }
 
-
             $fileId = $fileId[1];
-
-
             $fileId = explode("/", $fileId);
             $fileId = $fileId[0];
             $client = getClient();
 
             $docName = getDocumentName($client, $fileId);
-
             if ($docName != "")
                 $content = getContent($client, $fileId);
 
@@ -177,7 +172,6 @@ switch ($action) {
                 $check = readGoogleDocUrl($content);
                 if (!$checkSections)
                     echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
-
                 if ($reimport == 1) {
                     if (deleteNonUpdate())
                         if (bChanged())
@@ -244,29 +238,21 @@ function getClient()
         $client->setConfig('CURLOPT_CONNECTTIMEOUT', 100);
         $client->setConfig('CURLOPT_TIMEOUT', 1000);
     } catch (Exception  $e) {
-
         $response = $e->getCode();
-
-
         if ($response == 404)
             echo json_encode(
                 array('response' => false,
                     'text' => 'The link you entered is invalid or has some typo mistakes,check the link and try again !'));
-
         else
-
             echo json_encode(array('response' => false,
                 'text' => 'No access has been Granted to the service account!!
                  Please share the document with ntsdocuments@extractdocument.iam.gserviceaccount.com, for the program to read and try again!'));
     }
-
     return $client;
-
 }
 
 function insertPermission($service, $fileId, $type, $role)
 {
-
     $newPermission = new Google_Service_Drive_Permission();
     $newPermission->setType($type);
     $newPermission->setRole($role);
@@ -277,14 +263,12 @@ function insertPermission($service, $fileId, $type, $role)
     }
     return NULL;
 }
-
 //get content
 function getContent($client, $fileId)
 {
     $driveService = new Google_Service_Drive($client);
     $response = $driveService->files->export($fileId, 'text/html', array(
         'alt' => 'media'));
-
     return $response->getBody()->getContents();
 }
 
@@ -293,8 +277,6 @@ function getDocumentName($client, $fileId)
 {
     $service = new Google_Service_Docs($client);
     $doc = $service->documents->get($fileId);
-
-
     return $doc->getTitle();
 
 }

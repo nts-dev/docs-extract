@@ -1573,13 +1573,10 @@ function createLesson($id, $obj, $checked)
         $moodle_object->lessonid = $lesson_id;
         $moodle_object->module_id = $lessondata->data->module_id;
         $moodle_object->type = 'lesson';
-
         if (!$checked)
             $moodle_ids[] = $moodle_object;
-
         return array($lesson_id, $lessondata->data->module_id);
     }
-
     return false;
 }
 
@@ -1655,7 +1652,6 @@ function updateTopicName($section_id, $name, $pageid, $id, $check)
 {
     global $domainname, $wstoken, $restformat, $dbc, $updateModules, $responsesModules;
     $wsfunctionname = 'core_update_inplace_editable';
-
     $params = [
         'component' => 'format_topics',
         'itemtype' => 'sectionname',
@@ -1663,25 +1659,20 @@ function updateTopicName($section_id, $name, $pageid, $id, $check)
         'value' => $name,
     ];
     $serverurl = $domainname . "/webservice/rest/server.php?wstoken=" . $wstoken . "&wsfunction=" . $wsfunctionname;
-
     $curl = new curl;
     $restformat = ($restformat == 'json') ? '&moodlewsrestformat=' . $restformat : '';
     $resp = $curl->post($serverurl . $restformat, $params);
     $pagedata = json_decode($resp);
-
     $response = ['response' => true, 'text' => $name . " Updated successfully",];
-
     if ($check) {
         $updateModules[] = $response;
     }
-
     updateMoodle_idonInsert($pageid, $section_id, $id, $section_id);
 }
 
 function updateMoodle_id($moodle_ids, $id, $check)
 {
     global $dbc, $responsesModules;
-
     if ($check) {
         foreach ($moodle_ids as $obj) {
             if ($obj->id > 0) {
@@ -1696,7 +1687,6 @@ function updateMoodle_id($moodle_ids, $id, $check)
                     $responsesModules[] = $response;
                     return;
                 }
-
             }
         }
     } else {
@@ -1713,19 +1703,13 @@ function updateMoodle_id($moodle_ids, $id, $check)
         }
     }
     return $updateResult;
-
 }
-
 function updateMoodle_idonInsert($moodle_id, $lessonid, $id, $module_id)
 {
     global $dbc, $responsesModules;
-
-
     $update = "UPDATE `toc` SET module_id ='" . $module_id . "',lesson_id='" . $lessonid . "', moodle_id ='" . $moodle_id . "' , binsert =0,bUpdate=0,bChanged=0 WHERE id =" . $id;
     $updateResult = mysqli_query($dbc, $update);
-
     if (!$updateResult) {
-
         $response = [
             'response' => true,
             'text' => "Unable to insert " . $id,
@@ -1740,34 +1724,24 @@ function updateArchivedToc($doc_id)
 {
     global $dbc;
     $query_delete_prev = 'DELETE FROM archived_toc WHERE doc_id=' . $doc_id;
-
     $result = mysqli_query($dbc, $query_delete_prev) or die(mysqli_error($dbc));
-
-
     if ($result) {
         $export_query = 'INSERT INTO archived_toc
  (id,doc_id,sort_id,doc_name,date_time,chapter_id,chapter,parent_id,content,`type`,charVal,level_id,uppercss,lowercss,section_id,moodle_id,lesson_id,binsert,bUpdate,bDelete,bContent_update,bChanged,toUpdate)
 SELECT id,doc_id,sort_id,doc_name,date_time,chapter_id,chapter,parent_id,content,`type`,charVal,level_id,uppercss,lowercss,section_id,moodle_id,lesson_id,binsert,bUpdate,bDelete,bContent_update,bChanged,toUpdate FROM toc
 WHERE toc.doc_id= ' . $doc_id . ' ON DUPLICATE KEY UPDATE id=values(id),date_time=values(date_time),parent_id=values(parent_id),chapter_id=values(chapter_id),chapter=values(chapter)
 ,content=values(content),sort_id=values(sort_id),type =values(type),bUpdate =values(bUpdate),bChanged =values(bChanged),lesson_id =values(lesson_id),uppercss =values(uppercss),section_id =values(section_id),lowercss =values(lowercss),binsert =values(binsert),section_id =values(section_id),charVal =values(charVal),level_id =values(level_id),bDelete =values(bDelete),toUpdate = values(toUpdate)';
-
-
         $result = mysqli_query($dbc, $export_query) or die(mysqli_error($dbc));
     }
 }
-
 function backUpCourse($courseid, $name, $document_id)
 {
-
     global $domainname, $wstoken;
-
     $courseObject = [
         'course_id' => $courseid,
         'doc_name' => $name,
         'docid' => $document_id
-
     ];
-
     $curl = new curl;
     $serverurl = $domainname . "/moosh.php?action=6";
     $course_stat = $curl->post($serverurl, $courseObject);
@@ -1776,16 +1750,11 @@ function backUpCourse($courseid, $name, $document_id)
 
 function restoreCourse($course_id, $name)
 {
-
     global $domainname, $wstoken;
-
     $courseObject = [
-
         'course_id' => $course_id,
         'doc_name' => $name
-
     ];
-
     $curl = new curl;
     $serverurl = $domainname . "/moosh.php?action=7";
     $course_stat = $curl->post($serverurl, $courseObject);
@@ -1794,9 +1763,7 @@ function restoreCourse($course_id, $name)
 
 function UpdatePage($pageid, $pageContent, $sectionname, $module_id)
 {
-
     global $domainname, $wstoken, $updateModules;
-
 
 //    if ($pageid)
 //        $Content = getImageSource($pageContent, $pageid, $pageid, true);
@@ -1806,7 +1773,6 @@ function UpdatePage($pageid, $pageContent, $sectionname, $module_id)
 //
 //    if (!empty($Content))
 //        $Content = getVideoSource($Content, $module_id, $pageid, true);
-
     $courseObject = [
         'page_id' => $pageid,
         'content' => $pageContent,
@@ -1814,15 +1780,12 @@ function UpdatePage($pageid, $pageContent, $sectionname, $module_id)
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=7";
     $pageData = $curl->post($serverurl, $courseObject);
-
     if ($pageData) {
-
         $response = [
             'response' => true,
             'text' => $sectionname . ' Page Updated Successfully!',
         ];
         $updateModules[] = $response;
-
     } else {
         $response = [
             'response' => false,
@@ -1839,20 +1802,17 @@ function UpdatePage($pageid, $pageContent, $sectionname, $module_id)
 
 function UpdatePageNameContent($pageid, $name, $content, $module_id)
 {
-
-    $Content = getImageSource($content, $module_id, 33, true);
-    if (!empty($Content))
-        $Content = getAudioSource($Content, $module_id, $pageid, true);
-
-    if (!empty($Content))
-        $Content = getVideoSource($Content, $module_id, $pageid, true);
-
+//    $Content = getImageSource($content, $module_id, 33, true);
+//    if (!empty($Content))
+//        $Content = getAudioSource($Content, $module_id, $pageid, true);
+//    if (!empty($Content))
+//        $Content = getVideoSource($Content, $module_id, $pageid, true);
 
     global $domainname, $wstoken, $updateModules;
     $courseObject = [
         'page_id' => $pageid,
         'name' => $name,
-        'content' => $Content,
+        'content' => $content,
     ];
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=18";
@@ -1874,7 +1834,6 @@ function UpdatePageNameContent($pageid, $name, $content, $module_id)
 function UpdateLesson($lesson_id, $name, $course_id)
 {
     global $domainname, $wstoken, $responses, $updateModules;
-
     $courseObject = [
         'lesson_id' => $lesson_id,
         'name' => $name,
@@ -1883,14 +1842,12 @@ function UpdateLesson($lesson_id, $name, $course_id)
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=16";
     $pageData = $curl->post($serverurl, $courseObject);
-
     if ($pageData) {
         $response = [
             'response' => true,
             'text' => $name . ' Lesson Updated Successfully!',
         ];
         $updateModules[] = $response;
-
     } else {
         $response = [
             'response' => false,
@@ -1905,23 +1862,16 @@ function UpdateLesson($lesson_id, $name, $course_id)
 
 function UpdateLessonPage($pageid, $pageContent, $name, $check, $module_id)
 {
-
     global $domainname, $wstoken, $updateModules;
-
-
     $Content = getImageSource($pageContent, $module_id, $pageid, false);
 
     if (!empty($Content))
         $Content = getAudioSource($Content, $module_id, $pageid, false);
-
     if (!empty($Content))
         $Content = getVideoSource($Content, $module_id, $pageid, false);
-
-
     $courseObject = [
         'page_id' => $pageid,
         'content' => $Content,
-
     ];
 
     $curl = new curl;
@@ -1929,7 +1879,6 @@ function UpdateLessonPage($pageid, $pageContent, $name, $check, $module_id)
     $pageData = $curl->post($serverurl, $courseObject);
 
     if ($pageData) {
-
         $response = [
             'response' => true,
             'text' => $name . ' Lesson Page Updated Successfully!',
@@ -1947,33 +1896,26 @@ function UpdateLessonPage($pageid, $pageContent, $name, $check, $module_id)
         return;
     }
     return $response;
-
 }
 
 function UpdateLessonPageName($id, $name, $course_id, $check)
 {
     global $domainname, $wstoken, $updateModules;
-
     $courseObject = [
         'id' => $id,
         'name' => $name,
         'course_id' => $course_id
-
     ];
-
     $curl = new curl;
     $serverurl = $domainname . "/data_content.php?action=17";
     $pageData = $curl->post($serverurl, $courseObject);
-
     if ($pageData) {
-
         $response = [
             'response' => true,
             'text' => $name . ' Lesson Page Name Updated Successfully!',
         ];
         if (!$check)
             $updateModules[] = $response;
-
     } else {
         $response = [
             'response' => false,
@@ -1982,11 +1924,9 @@ function UpdateLessonPageName($id, $name, $course_id, $check)
         ];
         if (!$check)
             $updateModules[] = $response;
-
         return;
     }
     return $response;
-
 }
 
 
