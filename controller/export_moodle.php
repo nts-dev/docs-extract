@@ -16,8 +16,8 @@ define('TEST', 15);
 libxml_use_internal_errors(true);
 include_once 'config.php';
 
-error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
-ini_set('display_errors', '1');
+//error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
+//ini_set('display_errors', '1');
 require_once 'curl.php';
 
 //checking if script is in secured server
