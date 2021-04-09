@@ -353,7 +353,8 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
     } else {
         $youtube = 'watch?v=';
         $youtube1 = 'youtu.be';
-        $dhtmxFormat = '/play/?id=';
+        $dhtmxFormat = '/play?id=';
+        $dhtmxFormats = "/play?id=";
     }
     $startDelimiterLength = strlen($startDelimiter);
     $endDelimiterLength = strlen($endDelimiter);
@@ -365,7 +366,10 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
             break;
         }
         $replace = $startDelimiter . substr($str, $contentStart, $contentEnd - $contentStart) . $endDelimiter;
-        $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat);
+
+
+
+        $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat,$dhtmxFormats);
         $startFrom = $contentEnd + $endDelimiterLength;
     }
     return $str;
@@ -428,7 +432,7 @@ function changeMediaUrl($str)
     return $str;
 }
 
-function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat)
+function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat,$dhtmxFormats)
 {
     $mp4Delimiter = '';
     $mp3Delimiter = '';
@@ -443,8 +447,7 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
     if (filter_var(strip_tags($replace), FILTER_VALIDATE_URL)) {
 
         if (!empty($dhtmxFormat)) {
-            if (strpos(strip_tags($replace), $dhtmxFormat) !== false) {
-
+            if (strpos(strip_tags($replace), $dhtmxFormat) !== false||strpos(strip_tags($replace), $dhtmxFormats) !== false) {
                 $replacement = "<iframe src='" . strip_tags($replace) . "' width='500' height='300' frameborder='1' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
                 $str = str_replace($replace, $replacement, $str);
             }
