@@ -354,7 +354,7 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
         $youtube = 'watch?v=';
         $youtube1 = 'youtu.be';
         $dhtmxFormat = '/play?id=';
-        $dhtmxFormats = "/play?id=";
+        $dhtmxFormats = '/play/?id=';
     }
     $startDelimiterLength = strlen($startDelimiter);
     $endDelimiterLength = strlen($endDelimiter);
