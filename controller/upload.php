@@ -353,7 +353,7 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
     } else {
         $youtube = 'watch?v=';
         $youtube1 = 'youtu.be';
-        $dhtmxFormat = 'video.nts.nl/play/?id=';
+        $dhtmxFormat = '/play/?id=';
     }
     $startDelimiterLength = strlen($startDelimiter);
     $endDelimiterLength = strlen($endDelimiter);
