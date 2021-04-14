@@ -1,3 +1,9 @@
+<?php
+include('../includes.php');
+
+?>
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,10 +13,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
-    <link rel="stylesheet" type="text/css" href="plugins/dhtmlxsuite5/skins/web/dhtmlx.css"/>
-    <link rel="stylesheet" type="text/css" href="plugins/dhtmlxsuite5/skins/terrace/dhtmlx.css"/>
-    <link rel="stylesheet" type="text/css" href="plugins/dhtmlxsuite5/skins/skyblue/dhtmlx.css"/>
-    <link rel="stylesheet" type="text/css" href="plugins/font-awesome/css/font-awesome.min.css"/>
+    <?php
+
+    CSSPackage::DHTMLX();
+    CSSPackage::FONTAWESOME();
+    ?>
 
     <style>
         html, body {
@@ -69,25 +76,30 @@
             cursor: default;
             filter: none;
         }
+
         element {
             left: 0px;
             top: 120px;
             width: 368px;
             height: 842px;
         }
+
         .dhxlayout_base_dhx_terrace div.dhx_cell_layout div.dhx_cell_ribbon_def div.dhtmlxribbon_dhx_terrace.dhxrb_without_tabbar {
             height: 80px;
         }
+
         .dhtmlxribbon_dhx_terrace .dhxrb_block_base {
             height: 72px;
             width: auto;
         }
     </style>
 
-    <script src="plugins/dhtmlxsuite5/codebase/dhtmlx.js"></script>
-    <!--  Jquery -->
-    <script src="plugins/jquery/jquery-3.0.0.min.js"></script>
-    <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+    <?php
+
+    JSPackage::DHTMLX();
+    JSPackage::JQUERY();
+
+    ?>
 
 
 </head>
