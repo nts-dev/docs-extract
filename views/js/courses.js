@@ -4,7 +4,7 @@ document_ribbon = a.attachRibbon({
         {
             type: "block", text: "Course document", text_pos: "top", mode: "cols",
             list: [
-                {id: "new", type: "button", text: "New", img: "fa fa-file-archive-o", imgdis: "fa fa-file-archive-o"},
+                {id: "new", type: "button", text: "New", img: "fas fa-file-import", imgdis: "fas fa-file-import"},
                 {type: "newLevel"},
                 {id: "delete", type: "button", text: "Delete", img: "fa fa-trash", imgdis: "fa fa-trash"},
                 {type: "newLevel"},
@@ -14,8 +14,8 @@ document_ribbon = a.attachRibbon({
                     id: "export",
                     type: "button",
                     text: "Export",
-                    img: "fa fa-external-link-square",
-                    imgdis: "fa fa-external-link-square"
+                    img: "fas fa-file-export",
+                    imgdis: "fas fa-file-export"
                 },
                 {type: "newLevel"},
                 {id: "restore", type: "button", text: "Restore", img: "fa fa-undo fa-3x", imgdis: "fa fa-undo fa-3x"},
@@ -40,8 +40,8 @@ document_ribbon.attachEvent('onClick', onDocumentRibbonClick);
 grid_1 = a.attachGrid();
 
 grid_1.setSkin('dhx_web');
-grid_1.setImagePath('plugins/dhtmlxsuite4/skins/web/imgs/');
-grid_1.setIconsPath('./codebase/imgs/');
+grid_1.setImagePath(DHTMLXPATH+'plugins/dhtmlxsuite4/skins/web/imgs/');
+grid_1.setIconsPath(DHTMLXPATH+'codebase/imgs/');
 grid_1.setHeader(["ID", "Name", "Remote ID"]);
 grid_1.setColTypes("ro,ro,ro");
 grid_1.setColSorting('str,str,str');

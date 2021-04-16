@@ -104,6 +104,9 @@ include('../includes.php');
 
 </head>
 <body>
+<script>
+	const DHTMLXPATH = "<?=  Boot::WWWROOT .'packages/lib/dhtmlxSuite4/' ?>";
+</script>
 <script src="views/js/main.js"></script>
 <script src="views/js/courses.js"></script>
 <script src="views/js/chapters.js"></script>
