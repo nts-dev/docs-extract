@@ -39,7 +39,7 @@ class Google_Service_GoogleAnalyticsAdmin extends Google_Service
   /** View Google Analytics user permissions. */
   const ANALYTICS_MANAGE_USERS_READONLY =
       "https://www.googleapis.com/auth/analytics.manage.users.readonly";
-  /** View your Google Analytics data. */
+  /** See and download your Google Analytics data. */
   const ANALYTICS_READONLY =
       "https://www.googleapis.com/auth/analytics.readonly";
 
@@ -163,6 +163,16 @@ class Google_Service_GoogleAnalyticsAdmin extends Google_Service
               'path' => 'v1alpha/accounts:provisionAccountTicket',
               'httpMethod' => 'POST',
               'parameters' => array(),
+            ),'searchChangeHistoryEvents' => array(
+              'path' => 'v1alpha/{+account}:searchChangeHistoryEvents',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'account' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
             ),
           )
         )
@@ -469,6 +479,14 @@ class Google_Service_GoogleAnalyticsAdmin extends Google_Service
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,
+                ),
+                'pageSize' => array(
+                  'location' => 'query',
+                  'type' => 'integer',
+                ),
+                'pageToken' => array(
+                  'location' => 'query',
+                  'type' => 'string',
                 ),
               ),
             ),'patch' => array(

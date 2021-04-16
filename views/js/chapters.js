@@ -3,7 +3,7 @@ toolbar_2 = cell_1.attachToolbar();
 toolbar_2.setIconset("awesome");
 toolbar_2.addButton("select", 0, "<i class=\"fas fa-check-square\" aria-hidden=\"true\"></i>&nbsp; Select All");
 toolbar_2.addSeparator("button_separator_1", 1);
-toolbar_2.addButton("unselect", 2, "<i class='far fa-check-square'></i>&nbsp;Unselect All");
+toolbar_2.addButton("unselect", 2, "<i class=\"far fa-check-square\"></i>&nbsp;Unselect All");
 toolbar_2.addSeparator("button_separator_2", 3);
 toolbar_2.addButton("update", 4, "<i class='fa fa-edit' aria-hidden='true'></i>&nbsp; Update");
 toolbar_2.addSeparator("button_separator_3", 5);

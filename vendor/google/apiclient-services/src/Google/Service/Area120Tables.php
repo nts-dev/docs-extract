@@ -23,7 +23,7 @@
  *
  * <p>
  * For more information about this service, see the API
- * <a href="https://tables.area120.google.com" target="_blank">Documentation</a>
+ * <a href="https://support.google.com/area120-tables/answer/10011390" target="_blank">Documentation</a>
  * </p>
  *
  * @author Google, Inc.
@@ -45,6 +45,9 @@ class Google_Service_Area120Tables extends Google_Service
   /** View your Google Spreadsheets. */
   const SPREADSHEETS_READONLY =
       "https://www.googleapis.com/auth/spreadsheets.readonly";
+  /** See, edit, create, and delete your tables in Tables by Area 120. */
+  const TABLES =
+      "https://www.googleapis.com/auth/tables";
 
   public $tables;
   public $tables_rows;
@@ -114,6 +117,16 @@ class Google_Service_Area120Tables extends Google_Service
                   'required' => true,
                 ),
               ),
+            ),'batchDelete' => array(
+              'path' => 'v1alpha1/{+parent}/rows:batchDelete',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
             ),'batchUpdate' => array(
               'path' => 'v1alpha1/{+parent}/rows:batchUpdate',
               'httpMethod' => 'POST',
@@ -170,6 +183,10 @@ class Google_Service_Area120Tables extends Google_Service
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,
+                ),
+                'filter' => array(
+                  'location' => 'query',
+                  'type' => 'string',
                 ),
                 'pageSize' => array(
                   'location' => 'query',

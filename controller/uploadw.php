@@ -2,7 +2,7 @@
 
 ini_set('display_errors', '1');
 header("Access-Control-Allow-Origin: *");
-include 'config.php';
+include '../../config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
 

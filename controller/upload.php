@@ -5,7 +5,7 @@ error_reporting(E_ERROR | E_PARSE);
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: text/html; charset=utf-8');
 ini_set('max_execution_time', 0);
-include 'config.php';
+include '../../config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
 define('IMPORTZIP', 1);

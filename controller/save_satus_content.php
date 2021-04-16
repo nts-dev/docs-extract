@@ -1,9 +1,10 @@
 <!-- Place inside the <head> of your HTML -->
-<script type="text/javascript" src="../../plugins/tinymce4.4/tinymce.min.js"></script>
+<!--<script type="text/javascript" src="../../packages/lib/tinymce4.4/tinymce.min.js"></script>-->
 <!--  Jquery -->
-<script src="../../plugins/jquery/jquery-3.0.0.min.js"></script>
-<script src="../../plugins/jquery/jquery-ui.min.js"></script>
-
+<!--<script src="../../packages/lib/jquery/jquery-3.0.0.min.js"></script>-->
+<!--<script src="../../packages/lib/jquery/jquery-ui.min.js"></script>-->
+JSPackage::JQUERY();
+JSPackage::TINYMCE();
 <script type="text/javascript">
     tinymce.init({
         selector: "textarea",

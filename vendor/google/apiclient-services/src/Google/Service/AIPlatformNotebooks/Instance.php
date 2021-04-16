@@ -45,8 +45,12 @@ class Google_Service_AIPlatformNotebooks_Instance extends Google_Collection
   public $postStartupScript;
   public $proxyUri;
   public $serviceAccount;
+  public $serviceAccountScopes;
+  protected $shieldedInstanceConfigType = 'Google_Service_AIPlatformNotebooks_ShieldedInstanceConfig';
+  protected $shieldedInstanceConfigDataType = '';
   public $state;
   public $subnet;
+  public $tags;
   public $updateTime;
   protected $upgradeHistoryType = 'Google_Service_AIPlatformNotebooks_UpgradeHistoryEntry';
   protected $upgradeHistoryDataType = 'array';
@@ -138,14 +142,14 @@ class Google_Service_AIPlatformNotebooks_Instance extends Google_Collection
     return $this->diskEncryption;
   }
   /**
-   * @param Google_Service_AIPlatformNotebooks_Disk
+   * @param Google_Service_AIPlatformNotebooks_Disk[]
    */
   public function setDisks($disks)
   {
     $this->disks = $disks;
   }
   /**
-   * @return Google_Service_AIPlatformNotebooks_Disk
+   * @return Google_Service_AIPlatformNotebooks_Disk[]
    */
   public function getDisks()
   {
@@ -263,6 +267,28 @@ class Google_Service_AIPlatformNotebooks_Instance extends Google_Collection
   {
     return $this->serviceAccount;
   }
+  public function setServiceAccountScopes($serviceAccountScopes)
+  {
+    $this->serviceAccountScopes = $serviceAccountScopes;
+  }
+  public function getServiceAccountScopes()
+  {
+    return $this->serviceAccountScopes;
+  }
+  /**
+   * @param Google_Service_AIPlatformNotebooks_ShieldedInstanceConfig
+   */
+  public function setShieldedInstanceConfig(Google_Service_AIPlatformNotebooks_ShieldedInstanceConfig $shieldedInstanceConfig)
+  {
+    $this->shieldedInstanceConfig = $shieldedInstanceConfig;
+  }
+  /**
+   * @return Google_Service_AIPlatformNotebooks_ShieldedInstanceConfig
+   */
+  public function getShieldedInstanceConfig()
+  {
+    return $this->shieldedInstanceConfig;
+  }
   public function setState($state)
   {
     $this->state = $state;
@@ -279,6 +305,14 @@ class Google_Service_AIPlatformNotebooks_Instance extends Google_Collection
   {
     return $this->subnet;
   }
+  public function setTags($tags)
+  {
+    $this->tags = $tags;
+  }
+  public function getTags()
+  {
+    return $this->tags;
+  }
   public function setUpdateTime($updateTime)
   {
     $this->updateTime = $updateTime;
@@ -288,14 +322,14 @@ class Google_Service_AIPlatformNotebooks_Instance extends Google_Collection
     return $this->updateTime;
   }
   /**
-   * @param Google_Service_AIPlatformNotebooks_UpgradeHistoryEntry
+   * @param Google_Service_AIPlatformNotebooks_UpgradeHistoryEntry[]
    */
   public function setUpgradeHistory($upgradeHistory)
   {
     $this->upgradeHistory = $upgradeHistory;
   }
   /**
-   * @return Google_Service_AIPlatformNotebooks_UpgradeHistoryEntry
+   * @return Google_Service_AIPlatformNotebooks_UpgradeHistoryEntry[]
    */
   public function getUpgradeHistory()
   {

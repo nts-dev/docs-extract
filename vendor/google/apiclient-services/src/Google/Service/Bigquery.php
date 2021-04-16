@@ -39,7 +39,7 @@ class Google_Service_Bigquery extends Google_Service
   /** View your data in Google BigQuery. */
   const BIGQUERY_READONLY =
       "https://www.googleapis.com/auth/bigquery.readonly";
-  /** View and manage your data across Google Cloud Platform services. */
+  /** See, edit, configure, and delete your Google Cloud Platform data. */
   const CLOUD_PLATFORM =
       "https://www.googleapis.com/auth/cloud-platform";
   /** View your data across Google Cloud Platform services. */
@@ -587,7 +587,17 @@ class Google_Service_Bigquery extends Google_Service
         'rowAccessPolicies',
         array(
           'methods' => array(
-            'list' => array(
+            'getIamPolicy' => array(
+              'path' => '{+resource}:getIamPolicy',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'resource' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'list' => array(
               'path' => 'projects/{+projectId}/datasets/{+datasetId}/tables/{+tableId}/rowAccessPolicies',
               'httpMethod' => 'GET',
               'parameters' => array(
@@ -613,6 +623,26 @@ class Google_Service_Bigquery extends Google_Service
                 'pageToken' => array(
                   'location' => 'query',
                   'type' => 'string',
+                ),
+              ),
+            ),'setIamPolicy' => array(
+              'path' => '{+resource}:setIamPolicy',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'resource' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'testIamPermissions' => array(
+              'path' => '{+resource}:testIamPermissions',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'resource' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
                 ),
               ),
             ),

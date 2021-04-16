@@ -1,8 +1,8 @@
 toolbar_3 = cell_2.attachToolbar();
 toolbar_3.setIconset("awesome");
-toolbar_3.addButton("select", 0, "<i class=\"fa fa-check-square-o\" aria-hidden=\"true\"></i>&nbsp; Select All");
+toolbar_3.addButton("select", 0, "<i class=\"fas fa-check-square\" aria-hidden=\"true\"></i>&nbsp; Select All");
 toolbar_3.addSeparator("button_separator_1", 1);
-toolbar_3.addButton("unselect", 2, "<i class=\"fa fa-square-o\" aria-hidden=\"true\"></i>&nbsp;Unselect All");
+toolbar_3.addButton("unselect", 2, "<i class=\"far fa-check-square\" aria-hidden=\"true\"></i>&nbsp;Unselect All");
 toolbar_3.addSeparator("button_separator_2", 3);
 toolbar_3.addButton("restore", 4, "<i class='fa fa-undo fa-3x' aria-hidden='true'></i>&nbsp; Restore");
 toolbar_3.addSeparator("button_separator_3", 5);
@@ -11,7 +11,7 @@ toolbar_3.attachEvent('onClick', onToolbar3Click);
 
 grid_archive = cell_2.attachGrid();
 grid_archive.setSkin('dhx_web');
-grid_archive.setImagePath('plugins/dhtmlxsuite4/skins/web/imgs/');
+grid_archive.setImagePath(DHTMLXPATH+'skins/web/imgs/');
 grid_archive.setHeader(["Name", "Restore", "Updated", "Changed", "Deleted"]);
 grid_archive.setColTypes("tree,ch,icon,icon,icon");
 grid_archive.setColSorting('str,int,str,str,str');

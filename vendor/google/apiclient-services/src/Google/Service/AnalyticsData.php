@@ -23,7 +23,7 @@
  *
  * <p>
  * For more information about this service, see the API
- * <a href="https://developers.google.com/analytics/trusted-testing/analytics-data/" target="_blank">Documentation</a>
+ * <a href="https://developers.google.com/analytics/devguides/reporting/data/v1/" target="_blank">Documentation</a>
  * </p>
  *
  * @author Google, Inc.
@@ -33,7 +33,7 @@ class Google_Service_AnalyticsData extends Google_Service
   /** View and manage your Google Analytics data. */
   const ANALYTICS =
       "https://www.googleapis.com/auth/analytics";
-  /** View your Google Analytics data. */
+  /** See and download your Google Analytics data. */
   const ANALYTICS_READONLY =
       "https://www.googleapis.com/auth/analytics.readonly";
 

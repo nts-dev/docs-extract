@@ -1,7 +1,7 @@
 <?php
 
 header("Access-Control-Allow-Origin: *");
-include 'config.php';
+include '../../config.php';
 require_once '../vendor/autoload.php';
 
 define('IMPORTZIP', 1);

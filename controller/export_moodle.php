@@ -14,7 +14,7 @@ define('DELETE_MODULES', 13);
 define('ADD_MODULES', 14);
 define('TEST', 15);
 libxml_use_internal_errors(true);
-include_once 'config.php';
+include_once '../../config.php';
 
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 //ini_set('display_errors', '1');
