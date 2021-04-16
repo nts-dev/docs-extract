@@ -1188,12 +1188,7 @@ function createCourse($document_id)
 
         return;
     }
-    if ($coursedata->errorcode) {
-        $response = ['response' => false, 'errorMessage' => "Create Course Error!", 'text' => $coursedata->message,
-        ];
-        $responses[] = $response;
-        return;
-    }
+
     if (count($coursedata) == 0) {
         $response = ['response' => false, 'errorMessage' => "Create Course Error!", 'text' => $coursedata,];
         $responses[] = $response;
