@@ -21,10 +21,6 @@ include_once '../../config.php';
 require_once 'curl.php';
 
 //checking if script is in secured server
-if ($_SERVER['HTTPS'])
-    $http = 'https://';
-else
-    $http = 'http://';
 $responses = [];
 $responsesModules = [];
 $updateModules = [];
