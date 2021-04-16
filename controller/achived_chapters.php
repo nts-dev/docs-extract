@@ -1,6 +1,6 @@
 <?php
 
-include_once '../../config';
+include_once '../../config.php';
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 $action = $_GET['action'];
 
