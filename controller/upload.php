@@ -639,9 +639,7 @@ function downloadAudio($url, $mp3)
                 $fp = fopen($docFolder . "/" . $filename, "w+");
                 fwrite($fp, $content);
                 fclose($fp);
-                if (!file_exists($localUrl)) {
-                    return false;
-                }
+
             }
         }
 
