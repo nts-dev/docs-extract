@@ -1,6 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
+
 ini_set('max_execution_time', 0);
 ini_set('memory_limit', '3024M');
 define('CREATE_COURSE', 1);

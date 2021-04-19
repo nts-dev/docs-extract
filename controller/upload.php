@@ -1,7 +1,7 @@
 <?php
 
 ini_set('display_errors', '0');
-error_reporting(E_ERROR | E_PARSE);
+error_reporting(0);
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: text/html; charset=utf-8');
 ini_set('max_execution_time', 0);
@@ -11,11 +11,6 @@ require_once '../vendor/autoload.php';
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
 define('UPLOADFOLDER', 3);
-
-//$opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
-//$context = stream_context_create($opts);
-//$content = file_get_contents("http://localhost/CourseFiles/documentFiles/C001%20Moodle%20tutorial/images/image10.png",false,$context);
-//echo $content;
 libxml_use_internal_errors(true);
 $headings = array();
 $upperCss = "";
@@ -650,6 +645,8 @@ function downloadAudio($url, $mp3)
 
 function downloadVideo($url, $mp4)
 {
+
+
     global $docName;
     $filename = explode('/', $url);
     $filename = end($filename);
@@ -657,23 +654,27 @@ function downloadVideo($url, $mp4)
     $context = stream_context_create($opts);
     $url = str_replace(" ", "%20", $url);
     $localUrl = "../../CourseFiles/documentFiles/" . $docName . "/video/" . $filename;
+
     if (!file_exists($localUrl)) {
         $content = file_get_contents($url, false, $context);
         $docFolder = makedir($docName, 'video');
-        if (file_exists($docFolder)) {
-            $file = $docFolder . "/" . $filename;
-            if (!file_exists($file)) {
-                $fp = fopen($docFolder . "/" . $filename, "w+");
-                fwrite($fp, $content);
-                fclose($fp);
+        $file = $docFolder . "/" . $filename;
+        if (file_exists($docFolder)&&file_exists($file)) {
+
+               if (($fp = fopen($file, "w+"))!==false ) {
+                //if(is_resource($fp)) {
+                    fwrite($fp, $content);
+                    fclose($fp);
+                //}
+                   }
                 if (!file_exists($localUrl)) {
-                    return false;
+                    return null;
                 }
-            }
+          }
         }
 
 
-    }
+
     return $localUrl;
 
 
