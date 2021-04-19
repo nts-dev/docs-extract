@@ -1,6 +1,6 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-//error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 error_reporting(E_ERROR | E_PARSE);
 ini_set('max_execution_time', 0);
 ini_set('memory_limit', '3024M');
@@ -1110,7 +1110,7 @@ function addCourse($document_id, $isUpdate = false)
 {
     global $responses;
     $createCourseResult = createCourse($document_id);
-    if (!$createCourseResult['response']) {
+    if (!isset($createCourseResult['response'])) {
         return $createCourseResult;
     }
     $course_id = $createCourseResult['course_id'];
@@ -1181,6 +1181,13 @@ function createCourse($document_id)
     $restformat = ($restformat == 'json') ? '&moodlewsrestformat=' . $restformat : '';
     $resp = $curl->post($serverurl . $restformat, $params);
     $coursedata = json_decode($resp);
+
+    if (!empty($coursedata->errorcode)) {
+        $response = ['response' => false, 'errorMessage' => "Create Course Error!", 'text' => $coursedata->message,
+        ];
+        $responses[] = $response;
+        return;
+    }
 
     if (!$coursedata) {
         $response = ['response' => false, 'errorMessage' => "Create Course Error!", 'text' => $resp,];
@@ -1406,9 +1413,9 @@ function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
     $curl = new curl;
     $serverurl = $domainname . "/moosh.php?action=11";
     $resp = $curl->post($serverurl, $obj);
-
     $res = json_decode($resp);
-       return $res->image;
+    $path = parse_url($res->image, PHP_URL_PATH);
+       return $path;
 }
 
 function uploadToMoodle($filename, $old_src)
