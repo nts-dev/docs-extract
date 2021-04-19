@@ -11,6 +11,11 @@ require_once '../vendor/autoload.php';
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
 define('UPLOADFOLDER', 3);
+
+//$opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
+//$context = stream_context_create($opts);
+//$content = file_get_contents("http://localhost/CourseFiles/documentFiles/C001%20Moodle%20tutorial/images/image10.png",false,$context);
+//echo $content;
 libxml_use_internal_errors(true);
 $headings = array();
 $upperCss = "";
@@ -481,8 +486,9 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
 function checkMp4Format($mp4, $link)
 {
     foreach ($mp4 as $format) {
-        if (preg_match('/' . $format . '/', $link))
-            return true;
+//        if (preg_match('/' . $format . '/', $link))
+//            return true;
+        return substr_compare($link, $format, -strlen($format)) === 0;
     }
     return false;
 }
@@ -490,8 +496,9 @@ function checkMp4Format($mp4, $link)
 function checkMp3Format($mp3, $link)
 {
     foreach ($mp3 as $format) {
-        if (preg_match('/' . $format . '/', $link))
-            return true;
+//        if (preg_match('/' . $format . '/', $link))
+//            return true;
+        return substr_compare($link, $format, -strlen($format)) === 0;
     }
     return false;
 }
@@ -658,23 +665,23 @@ function downloadVideo($url, $mp4)
     if (!file_exists($localUrl)) {
         $content = file_get_contents($url, false, $context);
         $docFolder = makedir($docName, 'video');
-        $file = $docFolder . "/" . $filename;
-        if (file_exists($docFolder)&&file_exists($file)) {
+        if (file_exists($docFolder)) {
+            $file = $docFolder . "/" . $filename;
+            if (!file_exists($file)) {
 
-               if (($fp = fopen($file, "w+"))!==false ) {
-                //if(is_resource($fp)) {
+                if (($fp = fopen($file, "w+"))!==false ) {
+                if(is_resource($fp)) {
                     fwrite($fp, $content);
                     fclose($fp);
-                //}
-                   }
+                }}
                 if (!file_exists($localUrl)) {
-                    return null;
+                    return false;
                 }
-          }
+            }
         }
 
 
-
+    }
     return $localUrl;
 
 
