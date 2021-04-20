@@ -1,7 +1,9 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
 error_reporting(E_ERROR | E_PARSE);
+
+ini_set('error_reporting', E_STRICT);
 ini_set('max_execution_time', 0);
 ini_set('memory_limit', '3024M');
 define('CREATE_COURSE', 1);
@@ -1282,8 +1284,9 @@ function createObjects($id)
                 $object[$row['parent_id']] = new stdClass;
                 $object[$row['parent_id']]->children = array();
             }
+                  if(isset($row['id']))
+                   $objects[$row['parent_id']]->children[$row['id']] = $obj;
 
-            $objects[$row['parent_id']]->children[$row['id']] = $obj;
         }
     }
 
@@ -1382,7 +1385,7 @@ function getVideoSource($Content, $module_id, $page_id, $isPage)
 
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
-                $toAdd = " <video controls='true'><source src='" . $new_src_url . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+                $toAdd = " <video controls='true'; width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'><source src='" . $new_src_url . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
                 $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
                 $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
                 $Content = str_replace('Video Here', '', $Content);

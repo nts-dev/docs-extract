@@ -456,6 +456,7 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
             // echo  strip_tags($replace);
             $videoLink = downloadVideo(strip_tags($replace), $mp4);
             if (!empty($videoLink)) {
+
                 $replacement = "<a href='" . $videoLink . "'>Video Here</a>";
                 $str = str_replace($replace, $replacement, $str) . ".";
             }
@@ -674,7 +675,7 @@ function downloadVideo($url, $mp4)
                     fwrite($fp, $content);
                     fclose($fp);
                 }}
-                if (!file_exists($localUrl)) {
+                if (!file_exists($file)) {
                     return false;
                 }
             }
