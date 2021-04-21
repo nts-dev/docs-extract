@@ -3,7 +3,6 @@ header("Access-Control-Allow-Origin: *");
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
 error_reporting(E_ERROR | E_PARSE);
 
-ini_set('error_reporting', E_STRICT);
 ini_set('max_execution_time', 0);
 ini_set('memory_limit', '3024M');
 define('CREATE_COURSE', 1);
@@ -19,7 +18,7 @@ libxml_use_internal_errors(true);
 include_once '../../config.php';
 
 //error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
-//ini_set('display_errors', '1');
+ini_set('display_errors', '0');
 require_once 'curl.php';
 
 //checking if script is in secured server
@@ -1283,9 +1282,13 @@ function createObjects($id)
             if (!isset($object[$row['parent_id']])) {
                 $object[$row['parent_id']] = new stdClass;
                 $object[$row['parent_id']]->children = array();
+
             }
-                  if(isset($row['id']))
+            if(!isset($objects[$row['parent_id']]->children[$row['id']]))
+                     $objects[$row['parent_id']]->children[$row['id']] = new stdClass;
+
                    $objects[$row['parent_id']]->children[$row['id']] = $obj;
+                   //var_dump($objects);
 
         }
     }

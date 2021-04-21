@@ -2,14 +2,16 @@ toolbar_4 = tab_4.attachToolbar();
 toolbar_4.setIconset("awesome");
 toolbar_4.addButton("add", 0, "<i class=\"fa fa-plus\" aria-hidden=\"true\"></i>&nbsp; Add");
 toolbar_4.addSeparator("button_separator_1", 1);
-toolbar_4.addButton("delete", 2, "<i class=\"fa fa-trash\" aria-hidden=\"true\"></i> &nbsp; Delete");
+toolbar_4.addButton("edit", 2, "<i class=\"fa fa-edit\" aria-hidden=\"true\"></i> &nbsp; Edit");
+toolbar_4.addSeparator("button_separator_2", 3);
+toolbar_4.addButton("delete", 4, "<i class=\"fa fa-trash\" aria-hidden=\"true\"></i> &nbsp; Delete");
 
 server = tab_4.attachGrid();
 server.setSkin('dhx_web');
 server.setImagePath('plugins/dhtmlxsuite5/skins/web/imgs/');
 
 server.setHeader(["#", "Name", "Domain", "Token", "Path"]);
-server.setColTypes("cntr,ro,ed,ed,ed");
+server.setColTypes("cntr,ro,ro,ro,ro");
 
 server.setColSorting('int,str,str,str,str');
 server.setInitWidthsP('5,20,25,35,*');
@@ -17,6 +19,22 @@ server.init();
 server.load(baseURL + 'controller/chapters.php?action=7');
 
 toolbar_4.attachEvent('onClick', ontoolbar_4Click)
+server.attachEvent("onEditCell", onEditCell);
+
+function onEditCell(stage,rId,cInd,nValue,oValue){
+    if(stage===2) {
+
+        $.post(baseURL + "controller/chapters.php?action=15&id=" + rId + "&nValue="+nValue, function (data) {
+
+            if (data !== null) {
+                dhtmlx.message({title: 'Success',expire: 6000,text: data.text});
+                server.updateFromXML(baseURL + 'controller/chapters.php?action=7', true, true);
+            }
+            else
+                dhtmlx.message({title: 'Success',expire: 6000,text: data.text});
+        }, 'json');
+    }
+}
 
 function ontoolbar_4Click (id) {
 
@@ -27,11 +45,37 @@ function ontoolbar_4Click (id) {
         var domain = '';
         var token = '';
         var path = '';
+        // if (selectedId == null) {
+        //     name = '';
+        //     domain = '';
+        //     token = '';
+        //     path = '';
+        // } else {
+        //     name = server.cells(selectedId, 1).getValue();
+        //     domain = server.cells(selectedId, 2).getValue();
+        //     token = server.cells(selectedId, 3).getValue();
+        //     path = server.cells(selectedId, 4).getValue();
+        // }
+
+
+        addUpdateServer(domain, token, path, name,selectedId,false);
+
+
+    }
+    if (id === 'edit') {
+
+        var selectedId = server.getSelectedRowId();
+        var name = '';
+        var domain = '';
+        var token = '';
+        var path = '';
         if (selectedId == null) {
-            name = '';
-            domain = '';
-            token = '';
-            path = '';
+            dhtmlx.alert({
+                title: 'Error',
+                expire: 2000,
+                text: "Select a sever to Edit!"
+            });
+            return;
         } else {
             name = server.cells(selectedId, 1).getValue();
             domain = server.cells(selectedId, 2).getValue();
@@ -40,7 +84,7 @@ function ontoolbar_4Click (id) {
         }
 
 
-        addUpdateServer(domain, token, path, name);
+        addUpdateServer(domain, token, path, name,selectedId,true);
 
 
     }
@@ -76,7 +120,7 @@ function ontoolbar_4Click (id) {
 
 }
 
-function addUpdateServer(domain, token, path, name) {
+function addUpdateServer(domain, token, path, name,selectedId,check) {
 
     var windows = new dhtmlXWindows();
     window_8 = windows.createWindow('window_8', myWidth * 0.32, myWidth * 0.0555, myWidth * 0.333, myWidth * 0.24);
@@ -168,6 +212,7 @@ function addUpdateServer(domain, token, path, name) {
                 }
 
                 let postData = {
+                    'id':selectedId,
                     'name': name,
                     'domain': domain,
                     'token': token,
@@ -176,17 +221,34 @@ function addUpdateServer(domain, token, path, name) {
 
                 }
                 window_8.progressOn();
-                $.post(baseURL+ "controller/chapters.php?action=12", postData, function (data) {
+                if(!check) {
+                    $.post(baseURL + "controller/chapters.php?action=12", postData, function (data) {
 
-                    window_8.progressOff();
-                    dhtmlx.message({
-                        title: 'Success',
-                        expire: 2000,
-                        text: data.text
-                    });
-                    server.updateFromXML(baseURL+'controller/chapters.php?action=7', true, true);
-                    window_8.close();
-                }, "json");
+                        window_8.progressOff();
+                        dhtmlx.message({
+                            title: 'Success',
+                            expire: 2000,
+                            text: data.text
+                        });
+
+                        server.updateFromXML(baseURL + 'controller/chapters.php?action=7', true, true);
+                        window_8.close();
+                    }, "json");
+                }
+                else {
+                    $.post(baseURL + "controller/chapters.php?action=16", postData, function (data) {
+
+                        window_8.progressOff();
+                        dhtmlx.message({
+                            title: 'Success',
+                            expire: 2000,
+                            text: data.text
+                        });
+
+                        server.updateFromXML(baseURL + 'controller/chapters.php?action=7', true, true);
+                        window_8.close();
+                    }, "json");
+                }
 
             }
         }

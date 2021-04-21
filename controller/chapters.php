@@ -529,6 +529,35 @@ switch ($action) {
         echo json_encode($response);
 
         break;
+    case 16:
+        $ids = filter_input(INPUT_POST, 'id');
+        $name = filter_input(INPUT_POST, 'name');
+        $domain =  filter_input(INPUT_POST, 'domain');
+        $token= filter_input(INPUT_POST, 'token');
+        $path = filter_input(INPUT_POST, 'path');
+        $location = filter_input(INPUT_POST, 'location');
+
+        //$query = "INSERT INTO moodle_servers (name,domain, token,path,location ) VALUES ('". $name."','".$domain."','".$token."','".$path."','".$location."') ON DUPLICATE KEY UPDATE name=values(name),token=values(token),location = values(location)";
+
+        $Update_query = "UPDATE moodle_servers SET name ='". $name."', domain = '".$domain."', token='".$token."',path='".$path."',location='".$location."' WHERE id=".$ids;
+        $result = mysqli_query($dbc, $Update_query) or die(mysqli_error($dbc));
+        $response='';
+        if($result) {
+            $response = [
+                'response' => true,
+                'text' => "Saved"
+            ];
+        }
+        else{
+            $response = [
+                'response' => true,
+                'text' => "Error Occured"
+            ];
+        }
+
+        echo json_encode($response);
+
+        break;
 }
 
 function getHeadlineInformations($string)
