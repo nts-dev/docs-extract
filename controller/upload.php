@@ -449,10 +449,10 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
 
         if (!empty($dhtmxFormat)) {
             if (strpos(strip_tags($replace), $dhtmxFormat) !== false||strpos(strip_tags($replace), $dhtmxFormats) !== false) {
-                $path = parse_url(strip_tags($replace), PHP_URL_PATH);
-                $query = parse_url(strip_tags($replace), PHP_URL_QUERY);
-                $url = $path."?".$query;
-                $replacement = "<iframe src='" . $url . "' width='500' height='300' frameborder='1' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+//                $path = parse_url(strip_tags($replace), PHP_URL_PATH);
+//                $query = parse_url(strip_tags($replace), PHP_URL_QUERY);
+//                $url = $path."?".$query;
+                $replacement = "<iframe src='" . strip_tags($replace) . "' width='500' height='300' frameborder='1' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
                 $str = str_replace($replace, $replacement, $str);
             }
         }
