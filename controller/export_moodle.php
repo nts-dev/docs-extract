@@ -1420,8 +1420,8 @@ function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
     $serverurl = $domainname . "/moosh.php?action=11";
     $resp = $curl->post($serverurl, $obj);
     $res = json_decode($resp);
-    $path = parse_url($res->image, PHP_URL_PATH);
-       return $path;
+    //$path = parse_url($res->image, PHP_URL_PATH);
+       return $res->image;
 }
 
 function uploadToMoodle($filename, $old_src)

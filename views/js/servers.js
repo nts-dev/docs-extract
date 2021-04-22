@@ -19,21 +19,10 @@ server.init();
 server.load(baseURL + 'controller/chapters.php?action=7');
 
 toolbar_4.attachEvent('onClick', ontoolbar_4Click)
-server.attachEvent("onEditCell", onEditCell);
+server.attachEvent("onRowDblClicked", onRowDblClicked);
 
-function onEditCell(stage,rId,cInd,nValue,oValue){
-    if(stage===2) {
-
-        $.post(baseURL + "controller/chapters.php?action=15&id=" + rId + "&nValue="+nValue, function (data) {
-
-            if (data !== null) {
-                dhtmlx.message({title: 'Success',expire: 6000,text: data.text});
-                server.updateFromXML(baseURL + 'controller/chapters.php?action=7', true, true);
-            }
-            else
-                dhtmlx.message({title: 'Success',expire: 6000,text: data.text});
-        }, 'json');
-    }
+function onRowDblClicked(rId,cInd){
+    dhtmlx.message({title: 'Success',expire: 6000,text: 'Please use edit button!!'});
 }
 
 function ontoolbar_4Click (id) {
