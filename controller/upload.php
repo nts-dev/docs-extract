@@ -45,6 +45,8 @@ $details = '';
 $contentPerChapter = '';
 $strContent = '';
 $fileCounter = 0;
+$privateIps = [];
+$hasPrivateIP = false;
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
 
 switch ($action) {
@@ -135,7 +137,11 @@ switch ($action) {
 
             // echo json_encode($responses);
         } catch (Exception $e) {
-            echo json_encode(array('response' => false, 'text' => $e->getMessage()));
+            $response=[
+                'response' => false, 'text' => $e->getMessage()
+            ];
+            $responses[] = $response;
+            echo json_encode($responses);
         }
 
         break;
@@ -170,8 +176,14 @@ switch ($action) {
 
             if ($content) {
                 $check = readGoogleDocUrl($content);
-                if (!$checkSections)
-                    echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
+                if (!$checkSections){
+                    $response=[
+                        'response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'
+                    ];
+                    $responses[] = $response;
+                    echo json_encode($responses);
+                }
+                   // echo json_encode(array('response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'));
                 if ($reimport == 1) {
                     if (deleteNonUpdate())
                         if (bChanged())
@@ -184,7 +196,12 @@ switch ($action) {
             }
 
         } catch (Exception $e) {
-            echo json_encode(array('response' => false, 'text' => $e->getMessage()));
+            $response=[
+                'response' => false, 'text' => $e->getMessage()
+            ];
+            $responses[] = $response;
+            echo json_encode($responses);
+            //echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
         break;
 
@@ -322,6 +339,8 @@ function cleanArray($headings, $contents)
 function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
 {
     //identify video/audio/youtube by their extension
+
+    global $hasPrivateIP,$privateIps;
     $mp4 = array();
     $mp3 = array();
     $mp4[] = '.mp4';
@@ -366,12 +385,17 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
             break;
         }
         $replace = $startDelimiter . substr($str, $contentStart, $contentEnd - $contentStart) . $endDelimiter;
-
-
-
         $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat,$dhtmxFormats);
         $startFrom = $contentEnd + $endDelimiterLength;
     }
+    if($hasPrivateIP){
+
+    $response = [
+        'response' => true, 'hasPrivateIP' => true, 'urls' => implode(",",$privateIps)
+    ];
+    $responses[] = $response;
+
+}
     return $str;
 }
 
@@ -436,7 +460,7 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
 {
     $mp4Delimiter = '';
     $mp3Delimiter = '';
-
+   global $hasPrivateIP;
 
     $youtubeDelimiter = '';
     if ($isUser) {
@@ -444,10 +468,16 @@ function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxForma
         $mp3Delimiter = '<%003';
         $youtubeDelimiter = '<%002';
     }
+    $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
 
     if (filter_var(strip_tags($replace), FILTER_VALIDATE_URL)) {
 
         if (!empty($dhtmxFormat)) {
+            if (preg_match($pattern, strip_tags($replace))||strpos(strip_tags($replace), 'localhost') !== false ){
+                $privateIps[] = strip_tags($replace);
+                $hasPrivateIP = true;
+            }
+
             if (strpos(strip_tags($replace), $dhtmxFormat) !== false||strpos(strip_tags($replace), $dhtmxFormats) !== false) {
 //                $path = parse_url(strip_tags($replace), PHP_URL_PATH);
 //                $query = parse_url(strip_tags($replace), PHP_URL_QUERY);

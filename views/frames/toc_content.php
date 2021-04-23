@@ -23,6 +23,9 @@ JSPackage::TINYMCE();
         save_enablewhendirty: true,
         paste_data_images: true,
         media_live_embeds: true,
+        relative_urls: false,
+        convert_urls: false,
+        remove_script_host : false,
 
         save_onsavecallback: function () {
             var doc_id = parent.grid_2.getSelectedRowId();

@@ -10,6 +10,14 @@ switch ($action) {
 
     case 1:
 
+/*        echo '<?xml version="1.0"?>' . PHP_EOL;*/
+//        echo '<rows>';
+//
+//        treeDir();
+//
+//        echo '</rows>';
+//        break;
+//
         $query = 'SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
        FROM document LEFT JOIN course_server ON document.id = course_server.document_id
        LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc';
@@ -52,8 +60,8 @@ switch ($action) {
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
         if ($row = mysqli_fetch_assoc($result)) {
-            $content = str_replace("\/", "/", $row["uppercss"]) . str_replace("\/", "/", $row["content"]) . str_replace("\/", "/", $row["lowercss"]);
 
+            $content = str_replace("\/", "/", $row["uppercss"]) . str_replace("\/", "/", $row["content"]) . str_replace("\/", "/", $row["lowercss"]);
             echo json_encode($content);
         }
 
@@ -444,4 +452,56 @@ function deleteRemoteCourse($id){
         $query = "DELETE FROM documents WHERE id  =" . $id;
          $result = mysqli_query($remoteDbc, $query) or die(mysqli_error($remoteDbc));
 }
+}
+function treeDir()
+{
+    global $dbc;
+
+
+    $query = 'SELECT document.id,document.doc_name, moodle_servers.name,moodle_servers.id as server_id,document.document_url,document.local_course_id FROM
+ document LEFT JOIN course_server ON document.id = course_server.document_id LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc ';
+    $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+
+    $objects = array();
+    $roots = array();
+    while ($row = mysqli_fetch_assoc($result)) {
+
+        if (!isset($objects[$row['id']])) {
+            $objects[$row['id']] = new stdClass;
+            $objects[$row['id']]->children = array();
+        }
+
+        $obj = $objects[$row['id']];
+        $obj->id = $row['id'];
+        $obj->remote_id = $row['local_course_id'];
+
+        if (isset($row['server_id'])) {
+            $roots[] = $obj;
+        } else {
+            if (!isset($object[$row['server_id']])) {
+                $object[$row['server_id']] = new stdClass;
+                $object[$row['server_id']]->children = array();
+            }
+
+            $objects[$row['server_id']]->children[$row['id']] = $obj;
+        }
+    }
+
+    foreach ($roots as $obj) {
+        printXML($obj, true);
+    }
+}
+
+function printXML(stdClass $obj, $isRoot = false)
+{
+    echo '<row id="' . $obj->id . '">';
+    echo '<cell><![CDATA[' . $obj->id .']]></cell>';
+    echo '<cell><![CDATA[' . $obj->name .']]></cell>';
+    echo '<cell><![CDATA[' . $obj->remote_id .']]></cell>';
+
+    foreach ($obj->children as $child) {
+        printXML($child);
+    }
+
+    echo '</row>';
 }

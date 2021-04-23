@@ -345,39 +345,45 @@ function openUploadWindow(reimport, doc_id) {
                     };
                     window_4.progressOn();
                     $.post(baseURL + "controller/upload.php?action=2", postdata, function (data) {
-                        if (data.response) {
 
-                            grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
-                            tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
-                            tab_2.detachObject(true);
+                        for (var item in data) {
 
-                            if (reimport > 0) {
+                            if (data[item].response) {
 
+                                if (data[item].hasPrivateIP) {
+                                    openPrivateIpsWindow(data[item].urls);
+                                } else {
+
+                                    dhtmlx.message({title: 'Success', expire: 2000, text: data[item].text});
+                                    if (data[item].course_id) {
+                                        addingCourse(doc_id, data[item].course_id)
+                                    }
+                                }
                             } else {
-                                addServer(server_id);
+                                dhtmlx.alert({title: data[item].errorMessage, text: data[item].text});
                             }
-                            grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
-                            tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
-                            tab_2.detachObject(true);
-
-                            grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id, true, true);
-                            grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id, true, true);
-
-                            grid_2.expandAll();
-                            grid_archive.expandAll();
-                            dhtmlx.message({title: 'Success', expire: 2000, text: data.text});
-                            window_4.progressOff();
-                            window_4.close();
-                        } else {
-                            dhtmlx.alert({
-                                title: 'Error!',
-                                expire: 2000,
-                                text: data.text
-                            });
-
-                            window_4.progressOff();
-                            window_4.close();
                         }
+                        grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
+                        tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
+                        tab_2.detachObject(true);
+
+                        if (reimport > 0) {
+
+                        } else {
+                            addServer(server_id);
+                        }
+                        grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
+                        tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
+                        tab_2.detachObject(true);
+
+                        grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id, true, true);
+                        grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id, true, true);
+
+                        grid_2.expandAll();
+                        grid_archive.expandAll();
+                        window_4.progressOff();
+                        window_4.close();
+
                     }, "json");
                 } else {
                     dhtmlx.alert({
@@ -407,6 +413,21 @@ function getExtension(filename) {
     var parts = filename.split('.');
     return parts[parts.length - 1];
 }
+function openPrivateIpsWindow(ips) {
+    var windows = new dhtmlXWindows();
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
+    window_4.setText('Private Ips');
+    window_4.setModal(1);
+    window_4.button('park').hide();
+    window_4.button('minmax').hide();
+
+
+           // window_4.close();
+           // return true;
+
+
+}
+
 function openUploadFolderWindow(docname) {
     var windows = new dhtmlXWindows();
     var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)

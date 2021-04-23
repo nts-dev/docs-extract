@@ -16,8 +16,6 @@ define('ADD_MODULES', 14);
 define('TEST', 15);
 libxml_use_internal_errors(true);
 include_once '../../config.php';
-
-//error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 ini_set('display_errors', '0');
 require_once 'curl.php';
 
@@ -110,10 +108,61 @@ function getToken($doc_id)
         $token = $row["token"];
         $domain = $row["path"];
 
+        //Check external server
+        $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
+        $currentHost = 'http://' . $_SERVER['HTTP_HOST'] . '/moodle';
+
+        if (url_exists($domain)) {
+
+           // echo $domain;
+            if ((preg_match($pattern, $domain) || strpos($domain, 'localhost') !== false) && (!preg_match($pattern, $currentHost) || !strpos($currentHost, 'localhost') !== false)) {
+                if (url_exists($currentHost)) {
+                $text = $currentHost;
+                $response = [
+                    'response' => false,
+                    'errorMessage' => "Missing Resource!",
+                    'text' => "We Detect server changes Kindly, Update server Path" . $text
+                ];
+                //$responses[] = $response;
+                echo json_encode($response);
+                exit;
+            }
+                else{
+                    $response = [
+                        'response' => false,
+                        'errorMessage' => "Missing Resource!",
+                        'text' => "We did not find a valid server at ".$currentHost." Kindly Install Moodle or update moodle server to valid server!"
+                    ];
+                    //$responses[] = $response;
+                    echo json_encode($response);
+                    exit;
+                }
+            }
+        } else {
+            $text = "To Valid server";
+            $response = [
+                'response' => false,
+                'errorMessage' => "Missing Resource!",
+                'text' => "We Detect server changes Kindly, Update server Path" . $text
+            ];
+            //$responses[] = $response;
+            echo json_encode($response);
+            exit;
+        }
+
     }
     return array($token, $domain);
 }
-
+function url_exists($url) {
+    $ch = @curl_init($url);
+    @curl_setopt($ch, CURLOPT_HEADER, TRUE);
+    @curl_setopt($ch, CURLOPT_NOBODY, TRUE);
+    @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, FALSE);
+    @curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+    $status = array();
+    preg_match('/HTTP\/.* ([0-9]+) .*/', @curl_exec($ch) , $status);
+    return ($status[1] == 200);
+}
 switch ($action) {
     case CREATE_COURSE:
         $document_id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
@@ -451,7 +500,7 @@ function addModulePageLessonSection($ids, $doc_id)
 
                     updateTopicName($Mdl_section_id, $name, $moodle_id, $id, true);
 
-                   UpdatePage($moodle_id, $content, $name,$module_id);
+                    UpdatePage($moodle_id, $content, $name, $module_id);
 
                     UpdatePageNameContent($moodle_id, $name, $content, $moodle_id);
                 }
@@ -819,15 +868,15 @@ function addlessonpages($toAddLesson_ids)
 
     $lesson_id = 0;
 
-global $updateModules;
+    global $updateModules;
     $toAddLesson_ids = array_filter($toAddLesson_ids);
     sort($toAddLesson_ids);
     foreach ($toAddLesson_ids as $obj) {
-    $id= $obj->id;
-    $module_id = $obj->module_id;
-    $content = $obj->content;
-    $name = $obj->name;
-    $lesson_id= $obj->lesson_id;
+        $id = $obj->id;
+        $module_id = $obj->module_id;
+        $content = $obj->content;
+        $name = $obj->name;
+        $lesson_id = $obj->lesson_id;
 
         if ($obj->lesson_id != '') {
             $lessonObject = [
@@ -839,7 +888,7 @@ global $updateModules;
             updateMoodle_idonInsert($response, $lesson_id, $id, $module_id);
 
             UpdateLessonPage($response, $content, $name, true, $module_id);
-            $response = ['response' => true,'text' => $name . '  Inserted',];
+            $response = ['response' => true, 'text' => $name . '  Inserted',];
             $updateModules[] = $response;
 
         } else {
@@ -854,7 +903,7 @@ global $updateModules;
                 updateMoodle_idonInsert($response, $lesson_id, $id, $module_id);
                 UpdateLessonPage($response, $content, $name, true, $module_id);
 
-                $response = ['response' => true,'text' => $name . ' Inserted',];
+                $response = ['response' => true, 'text' => $name . ' Inserted',];
                 $updateModules[] = $response;
             }
         }
@@ -1223,12 +1272,12 @@ function createCourse($document_id)
 
             $result = mysqli_query($remoteDbc, $query_insert_document) or die(mysqli_error($remoteDbc));
             $docid = mysqli_insert_id($remoteDbc);
-			
-			
+
+
             if ($docid) {
-				$updatelocalCourse_id = "UPDATE document SET local_course_id = ". $docid . " WHERE document.id = ".$document_id;
-				mysqli_query($dbc, $updatelocalCourse_id) or die(mysqli_error($dbc));
-				
+                $updatelocalCourse_id = "UPDATE document SET local_course_id = " . $docid . " WHERE document.id = " . $document_id;
+                mysqli_query($dbc, $updatelocalCourse_id) or die(mysqli_error($dbc));
+
                 $updateLocal = 'INSERT INTO course_server (document_id,server_id) VALUES (' . $docid . ',' . $server_id . ')
             ON DUPLICATE KEY UPDATE document_id=values(document_id)';
                 $updateLocalResult = mysqli_query($remoteDbc, $updateLocal);
@@ -1284,11 +1333,11 @@ function createObjects($id)
                 $object[$row['parent_id']]->children = array();
 
             }
-            if(!isset($objects[$row['parent_id']]->children[$row['id']]))
-                     $objects[$row['parent_id']]->children[$row['id']] = new stdClass;
+            if (!isset($objects[$row['parent_id']]->children[$row['id']]))
+                $objects[$row['parent_id']]->children[$row['id']] = new stdClass;
 
-                   $objects[$row['parent_id']]->children[$row['id']] = $obj;
-                   //var_dump($objects);
+            $objects[$row['parent_id']]->children[$row['id']] = $obj;
+            //var_dump($objects);
 
         }
     }
@@ -1312,7 +1361,7 @@ function getImageSource($Content, $module_id, $page_id, $isPage)
 //            print_r($tag->attributes);
             $old_src = $tag->getAttribute('src');
             $link = str_replace('../../..', '', $old_src);
-            $link = str_replace("%20", " " , $link);
+            $link = str_replace("%20", " ", $link);
             $filename = 'images' . $counter . '.jpg';
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $link, $isPage);
@@ -1353,8 +1402,8 @@ function getAudioSource($Content, $module_id, $page_id, $isPage)
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
                 $toAdd = " <audio controls='true'><source src='" . $new_src_url . "'></audio></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
-                $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
+                $Content = str_replace('<a href="' . $toremove . '">', $toAdd, $Content);
+                $Content = str_replace("<a href='" . $toremove . "'>", $toAdd, $Content);
                 $Content = str_replace('Audio Here', '', $Content);
 
             }
@@ -1388,9 +1437,9 @@ function getVideoSource($Content, $module_id, $page_id, $isPage)
 
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $old_src, $isPage);
-                $toAdd = " <video controls='true'; width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen'><source src='" . $new_src_url . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                $Content = str_replace('<a href="' . $toremove.'">', $toAdd, $Content);
-                $Content = str_replace("<a href='" . $toremove."'>", $toAdd, $Content);
+                $toAdd = " <video controls='true' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen><source src='" . $new_src_url . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+                $Content = str_replace('<a href="' . $toremove . '">', $toAdd, $Content);
+                $Content = str_replace("<a href='" . $toremove . "'>", $toAdd, $Content);
                 $Content = str_replace('Video Here', '', $Content);
 
             }
@@ -1421,7 +1470,7 @@ function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
     $resp = $curl->post($serverurl, $obj);
     $res = json_decode($resp);
     //$path = parse_url($res->image, PHP_URL_PATH);
-       return $res->image;
+    return $res->image;
 }
 
 function uploadToMoodle($filename, $old_src)
@@ -1709,6 +1758,7 @@ function updateMoodle_id($moodle_ids, $id, $check)
     }
     return $updateResult;
 }
+
 function updateMoodle_idonInsert($moodle_id, $lessonid, $id, $module_id)
 {
     global $dbc, $responsesModules;
@@ -1739,6 +1789,7 @@ WHERE toc.doc_id= ' . $doc_id . ' ON DUPLICATE KEY UPDATE id=values(id),date_tim
         $result = mysqli_query($dbc, $export_query) or die(mysqli_error($dbc));
     }
 }
+
 function backUpCourse($courseid, $name, $document_id)
 {
     global $domainname, $wstoken;
