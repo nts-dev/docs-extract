@@ -114,7 +114,8 @@ function getToken($doc_id)
 
         if (url_exists($domain)||isLocalhost()) {
            // echo $domain;
-            if ((preg_match($pattern, $domain) || strpos($domain, 'localhost') !== false) && (!preg_match($pattern, $currentHost) || !strpos($currentHost, 'localhost') !== false)) {
+            if ((preg_match($pattern, $domain) ) && !preg_match($pattern, $currentHost) ){
+
                 if (url_exists($currentHost)) {
                 $text = $currentHost;
                 $response = [
