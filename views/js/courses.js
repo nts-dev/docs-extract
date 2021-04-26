@@ -40,10 +40,10 @@ document_ribbon.attachEvent('onClick', onDocumentRibbonClick);
 grid_1 = a.attachGrid();
 
 grid_1.setSkin('dhx_web');
-grid_1.setImagePath(DHTMLXPATH+'plugins/dhtmlxsuite4/skins/web/imgs/');
-grid_1.setIconsPath(DHTMLXPATH+'codebase/imgs/');
+grid_1.setImagePath(DHTMLXPATH+'skins/web/imgs/');
+grid_1.setIconset("fontawesome");
 grid_1.setHeader(["ID", "Name", "Remote ID"]);
-grid_1.setColTypes("ro,ro,ro");
+grid_1.setColTypes("tree,ro,ro");
 grid_1.setColSorting('str,str,str');
 grid_1.setInitWidthsP('15,*,25');
 grid_1.init();

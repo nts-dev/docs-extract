@@ -2,6 +2,7 @@
 
 include_once '../../config.php';
 require_once 'curl.php';
+ini_set('display_errors', '0');
 
 $action = $_GET['action'];
 
@@ -17,7 +18,7 @@ switch ($action) {
 //
 //        echo '</rows>';
 //        break;
-//
+
         $query = 'SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
        FROM document LEFT JOIN course_server ON document.id = course_server.document_id
        LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc';
@@ -463,44 +464,55 @@ function treeDir()
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
 
     $objects = array();
+    $rootObjects = array();
     $roots = array();
+    $server = -1;
     while ($row = mysqli_fetch_assoc($result)) {
 
-        if (!isset($objects[$row['id']])) {
-            $objects[$row['id']] = new stdClass;
-            $objects[$row['id']]->children = array();
+
+        if (!isset($rootObjects[$row['server_id']])) {
+            $rootObjects[$row['server_id']] = new stdClass;
+
         }
-
-        $obj = $objects[$row['id']];
-        $obj->id = $row['id'];
-        $obj->remote_id = $row['local_course_id'];
-
-        if (isset($row['server_id'])) {
-            $roots[] = $obj;
+         $rootObj = $rootObjects[$row['server_id']];
+         $rootObj->id = $row['server_id'];
+         $rootObj->server_name = $row['name'];
+         $rootObjects[$row['server_id']]->children = array();
+        if ($row['server_id'] !== $server) {
+            $roots[] = $rootObj;
         } else {
-            if (!isset($object[$row['server_id']])) {
-                $object[$row['server_id']] = new stdClass;
-                $object[$row['server_id']]->children = array();
+            if (!isset($objects[$row['id']])) {
+                $objects[$row['id']] = new stdClass;
             }
+            $obj = $objects[$row['id']];
+            $obj->id = $row['id'];
+            $obj->doc_name = $row['doc_name'];
+            $obj->remote_id = $row['local_course_id'];
 
-            $objects[$row['server_id']]->children[$row['id']] = $obj;
+          $rootObj->children[$row['id']] = $obj;
         }
+        $server = $row['server_id'];
     }
 
     foreach ($roots as $obj) {
         printXML($obj, true);
     }
+
+    echo "<pre>";
+    print_r($roots);
 }
 
 function printXML(stdClass $obj, $isRoot = false)
 {
     echo '<row id="' . $obj->id . '">';
     echo '<cell><![CDATA[' . $obj->id .']]></cell>';
-    echo '<cell><![CDATA[' . $obj->name .']]></cell>';
-    echo '<cell><![CDATA[' . $obj->remote_id .']]></cell>';
+    echo '<cell><![CDATA[' . $obj->server_name .']]></cell>';
 
     foreach ($obj->children as $child) {
-        printXML($child);
+        echo '<row id="' . $child->id . '">';
+        echo '<cell><![CDATA[' . $child->id .']]></cell>';
+        echo '<cell><![CDATA[' . $child->doc_name .']]></cell>';
+        echo '<cell><![CDATA[' . $child->remote_id .']]></cell>';
     }
 
     echo '</row>';
