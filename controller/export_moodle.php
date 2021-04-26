@@ -112,8 +112,7 @@ function getToken($doc_id)
         $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
         $currentHost = 'http://' . $_SERVER['HTTP_HOST'] . '/moodle';
 
-        if (url_exists($domain)) {
-
+        if (url_exists($domain)||isLocalhost()) {
            // echo $domain;
             if ((preg_match($pattern, $domain) || strpos($domain, 'localhost') !== false) && (!preg_match($pattern, $currentHost) || !strpos($currentHost, 'localhost') !== false)) {
                 if (url_exists($currentHost)) {
@@ -162,6 +161,9 @@ function url_exists($url) {
     $status = array();
     preg_match('/HTTP\/.* ([0-9]+) .*/', @curl_exec($ch) , $status);
     return ($status[1] == 200);
+}
+function isLocalhost($whitelist = ['127.0.0.1', '::1']) {
+    return in_array($_SERVER['REMOTE_ADDR'], $whitelist);
 }
 switch ($action) {
     case CREATE_COURSE:
