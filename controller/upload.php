@@ -623,7 +623,7 @@ function getImages($content)
 function downloadImages($url, $image, $name)
 {
     global $strContent, $docName;
-    $opts = array('http' => array('header' => "User-Agent:Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.75 Safari/537.1\r\n"));
+    $opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
     $context = stream_context_create($opts);
     $content = file_get_contents($url, false, $context);
     $dir = "/CourseFiles/documentFiles/" . $docName . "/images/" . $name . ".png";

@@ -43,7 +43,7 @@ grid_1.setSkin('dhx_web');
 grid_1.setImagePath(DHTMLXPATH+'skins/web/imgs/');
 grid_1.setIconset("fontawesome");
 grid_1.setHeader(["ID", "Name", "Remote ID"]);
-grid_1.setColTypes("tree,ro,ro");
+grid_1.setColTypes("ro,ro,ro");
 grid_1.setColSorting('str,str,str');
 grid_1.setInitWidthsP('15,*,25');
 grid_1.init();
@@ -363,16 +363,16 @@ function openUploadWindow(reimport, doc_id) {
                                 dhtmlx.alert({title: data[item].errorMessage, text: data[item].text});
                             }
                         }
-                        grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
-                        tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
-                        tab_2.detachObject(true);
+                        // grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1', true, true);
+                        // tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
+                        // tab_2.detachObject(true);
 
                         if (reimport > 0) {
 
                         } else {
                             addServer(server_id);
                         }
-                        grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
+                        grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1', true, true);
                         tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
                         tab_2.detachObject(true);
 

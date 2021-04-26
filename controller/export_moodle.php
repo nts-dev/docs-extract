@@ -1766,7 +1766,7 @@ function updateMoodle_idonInsert($moodle_id, $lessonid, $id, $module_id)
 {
     global $dbc, $responsesModules;
     $update = "UPDATE `toc` SET module_id ='" . $module_id . "',lesson_id='" . $lessonid . "', moodle_id ='" . $moodle_id . "' , binsert =0,bUpdate=0,bChanged=0 WHERE id =" . $id;
-    $updateResult = mysqli_query($dbc, $update);
+    $updateResult = mysqli_query($dbc, $update) or die(mysqli_error($dbc));
     if (!$updateResult) {
         $response = [
             'response' => true,
