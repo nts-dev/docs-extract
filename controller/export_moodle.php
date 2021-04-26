@@ -123,8 +123,8 @@ function getToken($doc_id)
                     'errorMessage' => "Missing Resource!",
                     'text' => "We Detect server changes Kindly, Update server Path" . $text
                 ];
-                //$responses[] = $response;
-                echo json_encode($response);
+                $responses[] = $response;
+                echo json_encode($responses);
                 exit;
             }
                 else{
@@ -133,8 +133,8 @@ function getToken($doc_id)
                         'errorMessage' => "Missing Resource!",
                         'text' => "We did not find a valid server at ".$currentHost." Kindly Install Moodle or update moodle server to valid server!"
                     ];
-                    //$responses[] = $response;
-                    echo json_encode($response);
+                   $responses[] = $response;
+                    echo json_encode($responses);
                     exit;
                 }
             }
@@ -145,8 +145,8 @@ function getToken($doc_id)
                 'errorMessage' => "Missing Resource!",
                 'text' => "We Detect server changes Kindly, Update server Path" . $text
             ];
-            //$responses[] = $response;
-            echo json_encode($response);
+            $responses[] = $response;
+            echo json_encode($responses);
             exit;
         }
 
