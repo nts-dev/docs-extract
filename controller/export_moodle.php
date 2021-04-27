@@ -489,7 +489,7 @@ function addModulePageLessonSection($ids, $doc_id)
             'page_name' => $name,
             'section_id' => $section_id,
             'parent_id' => $row['parent_id'],
-            'content' => $row["uppercss"] . $row["content"] . $row["lowercss"],
+            'content' => $content,
             'course_id' => $row["moodle_course_id"],
         ];
 
@@ -1511,11 +1511,13 @@ function printXML(stdClass $obj, $isRoot = false)
 
     global $section_id, $course_id, $section_name, $response, $moodle_ids;
     $data = $obj->content;
+    $content = str_replace($_SERVER['DOCUMENT_ROOT'] , "",$data);
+
     $dataObject = [
         'page_name' => $obj->chapter_id . " " . $obj->name,
         'section_id' => $section_id,
         'parent_id' => $obj->parent_id,
-        'content' => $data,
+        'content' => $content,
         'course_id' => $course_id,
         'id' => $obj->id
     ];
@@ -1604,10 +1606,7 @@ function insertPage($obj, $name, $id)
 
     UpdatePage($pagedata->page_id, $obj->content, $name, $pagedata->section);
     if ($pagedata->is_section) {
-
-
         updateTopicName($pagedata->section, $name, $pagedata->page_id, $id, true);
-
     }
     return $pagedata->page_id;
 }
