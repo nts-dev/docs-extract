@@ -112,43 +112,43 @@ function getToken($doc_id)
         $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
         $currentHost = 'http://' . $_SERVER['HTTP_HOST'] . '/moodle';
 
-        if (url_exists($domain)||isLocalhost()) {
-           // echo $domain;
-            if ((preg_match($pattern, $domain) ) && !preg_match($pattern, $currentHost) ){
-
-                if (url_exists($currentHost)) {
-                $text = $currentHost;
-                $response = [
-                    'response' => false,
-                    'errorMessage' => "Missing Resource!",
-                    'text' => "We Detect server changes Kindly, Update server Path" . $text
-                ];
-                $responses[] = $response;
-                echo json_encode($responses);
-                exit;
-            }
-                else{
-                    $response = [
-                        'response' => false,
-                        'errorMessage' => "Missing Resource!",
-                        'text' => "We did not find a valid server at ".$currentHost." Kindly Install Moodle or update moodle server to valid server!"
-                    ];
-                   $responses[] = $response;
-                    echo json_encode($responses);
-                    exit;
-                }
-            }
-        } else {
-            $text = "To Valid server";
-            $response = [
-                'response' => false,
-                'errorMessage' => "Missing Resource!",
-                'text' => "We Detect server changes Kindly, Update server Path" . $text
-            ];
-            $responses[] = $response;
-            echo json_encode($responses);
-            exit;
-        }
+//        if (url_exists($domain)||isLocalhost()) {
+//           // echo $domain;
+//            if ((preg_match($pattern, $domain) ) && !preg_match($pattern, $currentHost) ){
+//
+//                if (url_exists($currentHost)) {
+//                $text = $currentHost;
+//                $response = [
+//                    'response' => false,
+//                    'errorMessage' => "Missing Resource!",
+//                    'text' => "We Detect server changes Kindly, Update server Path" . $text
+//                ];
+//                $responses[] = $response;
+//                echo json_encode($responses);
+//                exit;
+//            }
+//                else{
+//                    $response = [
+//                        'response' => false,
+//                        'errorMessage' => "Missing Resource!",
+//                        'text' => "We did not find a valid server at ".$currentHost." Kindly Install Moodle or update moodle server to valid server!"
+//                    ];
+//                   $responses[] = $response;
+//                    echo json_encode($responses);
+//                    exit;
+//                }
+//            }
+//        } else {
+//            $text = "To Valid server";
+//            $response = [
+//                'response' => false,
+//                'errorMessage' => "Missing Resource!",
+//                'text' => "We Detect server changes Kindly, Update server Path" . $text
+//            ];
+//            $responses[] = $response;
+//            echo json_encode($responses);
+//            exit;
+//        }
 
     }
     return array($token, $domain);
