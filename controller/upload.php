@@ -11,11 +11,6 @@ include "Files.php";
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
 define('UPLOADFOLDER', 3);
-
-//$opts = array('http'=>array('header' => "User-Agent:MyAgent/1.0\r\n"));
-//$context = stream_context_create($opts);
-//$content = file_get_contents("http://localhost/CourseFiles/documentFiles/C001%20Moodle%20tutorial/images/image10.png",false,$context);
-//echo $content;
 libxml_use_internal_errors(true);
 $headings = array();
 $upperCss = "";
@@ -47,8 +42,14 @@ $strContent = '';
 $fileCounter = 0;
 $privateIps = [];
 $hasPrivateIP = false;
+$delimiters = [];
+$links = '<a,</a>';
+$userCommands_1 = "<%,%>";
+$userCommands = "&lt;%,%&gt;";
+$delimiters[] = $links;
+$delimiters[] = $userCommands;
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
-//$classObj = new Files();
+//$classObj = new Files(); '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
 
 //echo  $classObj->download("mp3");
 //exit;
@@ -341,7 +342,7 @@ function cleanArray($headings, $contents)
 }
 
 //replace links with visible videos/audios
-function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
+function getReplaceLinks($str, $delimiters, $isUser)
 {
     //identify video/audio/youtube by their extension
 
@@ -371,8 +372,8 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
     $youtube = '';
     $dhtmxFormat = '';
     if ($isUser) {
-        $mp4 = '001';
-        $mp3 = '003';
+        // $mp4 = '001';
+        // $mp3 = '003';
         $youtube = '002';
     } else {
         $youtube = 'watch?v=';
@@ -380,166 +381,163 @@ function getReplaceLinks($str, $startDelimiter, $endDelimiter, $isUser)
         $dhtmxFormat = '/play?id=';
         $dhtmxFormats = '/play/?id=';
     }
-    $startDelimiterLength = strlen($startDelimiter);
-    $endDelimiterLength = strlen($endDelimiter);
-    $startFrom = $contentStart = $contentEnd = 0;
-    while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
-        $contentStart += $startDelimiterLength;
-        $contentEnd = strpos($str, $endDelimiter, $contentStart);
-        if (false === $contentEnd) {
-            break;
+    foreach ($delimiters as $delimiter) {
+        $Delimiter = explode(",", $delimiter);
+        $startDelimiter = $Delimiter[0];
+        $endDelimiter = $Delimiter[1];
+        $startDelimiterLength = strlen($startDelimiter);
+        $endDelimiterLength = strlen($endDelimiter);
+        $startFrom = $contentStart = $contentEnd = 0;
+        while (false !== ($contentStart = strpos($str, $startDelimiter, $startFrom))) {
+            $contentStart += $startDelimiterLength;
+            $contentEnd = strpos($str, $endDelimiter, $contentStart);
+            if (false === $contentEnd) {
+                break;
+            }
+            $replace = $startDelimiter . substr($str, $contentStart, $contentEnd - $contentStart) . $endDelimiter;
+            $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat, $dhtmxFormats);
+            $startFrom = $contentEnd + $endDelimiterLength;
         }
-        $replace = $startDelimiter . substr($str, $contentStart, $contentEnd - $contentStart) . $endDelimiter;
-        $str = replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat, $dhtmxFormats);
-        $startFrom = $contentEnd + $endDelimiterLength;
-    }
-    if ($hasPrivateIP) {
+        if ($hasPrivateIP) {
 
-        $response = [
-            'response' => true, 'hasPrivateIP' => true, 'urls' => implode(",", $privateIps)
-        ];
-        $responses[] = $response;
+            $response = [
+                'response' => true, 'hasPrivateIP' => true, 'urls' => implode(",", $privateIps)
+            ];
+            $responses[] = $response;
 
+        }
     }
     return $str;
 }
 
-function changeMediaUrl($str)
-{
-    $mp4 = array();
-    $mp3 = array();
-    $mp4[] = '.mp4';
-    $mp4[] = '.MP4';
-    $mp4[] = '.MKV';
-    $mp4[] = '.mkv';
-    $mp4[] = '.AVI';
-    $mp4[] = '.avi';
-    $mp4[] = '.MOV';
-    $mp4[] = '.mov';
-    $mp3 [] = '.WAV';
-    $mp3 [] = '.wav';
-    $mp3 [] = '.AIFF';
-    $mp3 [] = '.aiff';
-    $mp3 [] = '.AAC';
-    $mp3 [] = '.aac';
-    $mp3 [] = '.OGG';
-    $mp3 [] = '.ogg';
-    $mp3 [] = '.WMA';
-    $mp3 [] = '.wma';
-    $mp3 [] = '.MP3';
-    $mp3 [] = '.mp3';
-
-    $htmlDom = new DOMDocument;
-    @$htmlDom->loadHTML($str);
-    $links = $htmlDom->getElementsByTagName('a');
-    foreach ($links as $link) {
-        $linkHref = $link->getAttribute('href');
-        if (strlen(trim($linkHref)) == 0) {
-            continue;
-        }
-        //Skip if it is a hashtag / anchor link.
-        if ($linkHref[0] == '#') {
-            continue;
-        }
-
-        if (checkMp4Format($mp4, $linkHref) || checkMp4Format($mp4, $link->nodeValue)) {
-            $linkHref = strip_tags($linkHref);
-            $videoLink = downloadVideo($link->nodeValue, $mp4);
-            $link->removeAttribute('href');
-            $link->setAttribute("href", $videoLink);
-            $link->nodeValue = "Video Here";
-        } else if (checkMp3Format($mp3, $link->nodeValue) || checkMp3Format($mp3, $linkHref)) {
-            $linkHref = strip_tags($linkHref);
-            $audioLink = downloadAudio($link->nodeValue, $mp3);
-            $link->removeAttribute('href');
-            $link->setAttribute("href", $audioLink);
-            $link->nodeValue = "Audio Here";
-        }
-
-    }
-    $str = $htmlDom->saveHTML();
-    return $str;
-}
 
 function replaceLinks($replace, $str, $mp4, $mp3, $youtube, $isUser, $dhtmxFormat, $dhtmxFormats)
 {
-    $mp4Delimiter = '';
-    $mp3Delimiter = '';
-    global $hasPrivateIP;
-
     $youtubeDelimiter = '';
     if ($isUser) {
-        $mp4Delimiter = '<%001';
-        $mp3Delimiter = '<%003';
         $youtubeDelimiter = '<%002';
     }
-    $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
-
+   // $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
     if (filter_var(strip_tags($replace), FILTER_VALIDATE_URL)) {
-
         if (!empty($dhtmxFormat)) {
-            if (preg_match($pattern, strip_tags($replace)) || strpos(strip_tags($replace), 'localhost') !== false) {
-                $privateIps[] = strip_tags($replace);
-                $hasPrivateIP = true;
-            }
-
-            if (strpos(strip_tags($replace), $dhtmxFormat) !== false && preg_match($pattern, strip_tags($replace))) {
-                $path = parse_url(strip_tags($replace), PHP_URL_PATH);
-                $query = parse_url(strip_tags($replace), PHP_URL_QUERY);
-                $url = $path . "?" . $query;
-                $replacement = "<iframe src='" . $url . "' width='500' height='300' frameBorder='0' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                $str = str_replace($replace, $replacement, $str);
-            }
-            else if (strpos(strip_tags($replace), $dhtmxFormat) !== false ) {
-                //$path = parse_url(strip_tags($replace), PHP_URL_PATH);
-                //$query = parse_url(strip_tags($replace), PHP_URL_QUERY);
-                //$url = $path . "?" . $query;
-                $replacement = "<iframe src='" . strip_tags($replace) . "' width='500' height='300' frameBorder='0' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                $str = str_replace($replace, $replacement, $str);
-            }
+            $str = checkDhtmlxFormat($dhtmxFormat,  $replace, $str);
+        }
+        if (!empty($dhtmxFormats)) {
+            $str = checkDhtmlxFormat($dhtmxFormats, $replace, $str);
         }
         if (checkMp4Format($mp4, strip_tags($replace))) {
-            // echo  strip_tags($replace);
-            $videoLink = downloadVideo(strip_tags($replace), $mp4);
-            if (!empty($videoLink)) {
-
-                $replacement = "<a href='" . $videoLink . "'>Video Here</a>";
-                // $replacement = " <video controls='true' width='560' height='315' frameborder='0' allow='autoplay; encrypted-media' allowfullscreen><source src='" . $videoLink . "'></video></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                $str = str_replace($replace, $replacement, $str) . ".";
-            }
+            $str = replaceMp4Format($replace, $mp4, $str);
         } else if (checkMp3Format($mp3, strip_tags($replace))) {
+            $str = replaceMp3Format($replace, $mp3, $str);
+        }
+        $str = replaceYoutubeFiles($replace, $youtube, $youtubeDelimiter, $str);
+    }
+    $str = replaceUserCommandFiles($replace, $str);
+    return $str;
+}
 
-            $link = downloadAudio(strip_tags($replace), $mp3);
-            if (!empty($link)) {
-                $replacement = "<a href='" . $link . "'>Audio Here</a>";
-                // $replacement =  " <audio controls='true'><source src='" . $link . "'></audio></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-                $str = str_replace($replace, $replacement, $str) . ".";
-            }
-        } else if (strpos($replace, $youtube) !== false) {
-            $embededVideo = str_replace("www.youtube.com/watch?v=", "www.youtube-nocookie.com/embed/", strip_tags($replace));
-            $embededVideo = explode("&amp;", $embededVideo);
-            $embededVideo = $embededVideo[0];
-            $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315'  allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-            $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
-        } else if (strpos($replace, 'youtu.be') !== false) {
-            $embededVideo = str_replace("youtu.be", "www.youtube-nocookie.com/embed", strip_tags($replace));
-            $embededVideo = explode("&amp;", $embededVideo);
-            $embededVideo = $embededVideo[0];
-            $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameBorder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-            $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
-        } else if (strpos($replace, 'youtube.com/embed') !== false) {
-            $replacement = "<iframe src='" . strip_tags($replace) . "' width='560' height='315' frameBorder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
-            $str = str_replace(strip_tags($replace) , $replacement, $str);
+function checkDhtmlxFormat($dhtmxFormat, $replace, $str)
+{
+    global $hasPrivateIP;
+    $pattern = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/';
+    if (preg_match($pattern, strip_tags($replace)) || strpos(strip_tags($replace), 'localhost') !== false) {
+        $privateIps[] = strip_tags($replace);
+        $hasPrivateIP = true;
+    }
+    if (strpos(strip_tags($replace), $dhtmxFormat) !== false && (preg_match($pattern, strip_tags($replace))||strpos(strip_tags($replace), "localhost") !== false )) {
+        $str = checkRelativePath($str, strip_tags($replace));
+    } else if (strpos(strip_tags($replace), $dhtmxFormat) !== false) {
+        $str = checkAbsolutePath(strip_tags($replace), $str);
+
+    }
+    return $str;
+}
+
+
+function replaceYoutubeFiles($replace, $youtube, $youtubeDelimiter, $str)
+{
+    if (strpos($replace, $youtube) !== false) {
+        $embededVideo = str_replace("www.youtube.com/watch?v=", "www.youtube-nocookie.com/embed/", strip_tags($replace));
+        $embededVideo = explode("&amp;", $embededVideo);
+        $embededVideo = $embededVideo[0];
+        $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315'  allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+        $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
+    } else if (strpos($replace, 'youtu.be') !== false) {
+        $embededVideo = str_replace("youtu.be", "www.youtube-nocookie.com/embed", strip_tags($replace));
+        $embededVideo = explode("&amp;", $embededVideo);
+        $embededVideo = $embededVideo[0];
+        $replacement = "<iframe src='" . $embededVideo . "' width='560' height='315' frameBorder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+        $str = str_replace($youtubeDelimiter . $replace, $replacement, $str);
+    } else if (strpos($replace, 'youtube.com/embed') !== false) {
+        $replacement = "<iframe src='" . strip_tags($replace) . "' width='560' height='315' frameBorder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+        $str = str_replace(strip_tags($replace), $replacement, $str);
+    }
+    return $str;
+}
+
+function replaceUserCommandFiles($replace, $str)
+{
+    if (strpos($replace, 'play:video') !== false) {
+        $harshCode = explode("=", strip_tags($replace));
+        if (isset($harshCode[1])) {
+            $harshCode = $harshCode[1];
+            $harshCode = str_replace('%&gt;', '', $harshCode);
+            $replacement = "<iframe src='/nts-programs/nts-video/play?id=" . $harshCode . "' width='560' height='315' frameBorder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+            $str = str_replace(strip_tags($replace), $replacement, $str);
+        }
+    }
+    if (strpos($replace, 'play:audio') !== false) {
+        $harshCode = explode("=", strip_tags($replace));
+        if (isset($harshCode[1])) {
+            $harshCode = $harshCode[1];
+            $harshCode = str_replace('%&gt;', '', $harshCode);
+            $replacement = "<iframe src='/nts-programs/nts-video/play?id=" . $harshCode . "' width='400' height='200' frameBorder='0' allow='autoplay; encrypted-media' allowfullscreen'></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+            $str = str_replace(strip_tags($replace), $replacement, $str);
         }
     }
     return $str;
+}
+
+function replaceMp3Format($replace, $mp3, $str)
+{
+    $link = downloadAudio(strip_tags($replace), $mp3);
+    if (!empty($link)) {
+        $replacement = "<a href='" . $link . "'>Audio Here</a>";
+        $str = str_replace($replace, $replacement, $str) . ".";
+    }
+    return $str;
+}
+
+function replaceMp4Format($replace, $mp4, $str)
+{
+    $videoLink = downloadVideo(strip_tags($replace), $mp4);
+    if (!empty($videoLink)) {
+        $replacement = "<a href='" . $videoLink . "'>Video Here</a>";
+        $str = str_replace($replace, $replacement, $str) . ".";
+    }
+    return $str;
+}
+
+function checkRelativePath($str, $replace)
+{
+    $path = parse_url(strip_tags($replace), PHP_URL_PATH);
+    $query = parse_url(strip_tags($replace), PHP_URL_QUERY);
+    $url = $path . "?" . $query;
+    $replacement = "<iframe src='" . $url . "' width='500' height='300' frameBorder='0' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+    $str = str_replace($replace, $replacement, $str);
+
+    return $str;
+}
+
+function checkAbsolutePath($replace, $str)
+{
+    $replacement = "<iframe src='" . $replace . "' width='500' height='300' frameBorder='0' allowfullscreen='true'  ></iframe></span> <p class='c2'><span ></span></p><p ><span ></span></p></p><p ><span ></p>";
+    return str_replace($replace, $replacement, $str);
 }
 
 function checkMp4Format($mp4, $link)
 {
     foreach ($mp4 as $format) {
-//        if (preg_match('/' . $format . '/', $link))
-//            return true;
         return substr_compare($link, $format, -strlen($format)) === 0;
     }
     return false;
@@ -559,24 +557,10 @@ function checkMp3Format($mp3, $link)
 function readGoogleDocUrl($content)
 {
     $contentsWithVideoAudio = '';
-    global $docName, $strContent;
+    global $docName, $strContent, $delimiters;
 
+    $contentsWithVideoAudio = getReplaceLinks($content, $delimiters, false);
 
-//
-//    if (strpos($content, '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
-//        $startDelimiter = '&lt;%';
-//        $endDelimiter = '%&gt;';
-//        $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, fa);
-//    }
-    if (strpos($content, '<a') !== false && strpos($content, '/a>') !== false) {
-        // setting delimiters for links
-        $startDelimiter = '<a';
-        $endDelimiter = '/a>';
-        $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, false);
-    }
-
-    // $contentsWithVideoAudio = changeMediaUrl($contentsWithVideoAudio);
-    // remove opening user delimiters
     $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("&lt;%003", "", $contentsWithVideoAudio);
@@ -760,6 +744,7 @@ function xrmdir($dir)
 
 function readGoogleDocHtml($path, $docFolder, $check)
 {
+    global $delimiters;
     $filename = explode(".", $docFolder);
     $filename = $filename[0];
     $filename = str_replace(' ', "%20", $filename);
@@ -776,7 +761,7 @@ function readGoogleDocHtml($path, $docFolder, $check)
     // setting delimiters for links
     $startDelimiter = '<a';
     $endDelimiter = '</a>';
-    $contentsWithVideoAudio = getReplaceLinks($contents, $startDelimiter, $endDelimiter, false);
+    $contentsWithVideoAudio = getReplaceLinks($contents, $delimiters, false);
     //remove opening user delimiters
     $contentsWithVideoAudio = str_replace('&lt;%001', '', $contentsWithVideoAudio);
     $contentsWithVideoAudio = str_replace("&lt;%002", "", $contentsWithVideoAudio);
@@ -793,6 +778,7 @@ function readGoogleDocHtml($path, $docFolder, $check)
 
 function readGoogleDocZip($path, $docFolder, $check)
 {
+    global $delimiters;
     $contentsWithVideoAudio = '';
     $content = "";
     $files = glob($path . '/*html');
@@ -817,9 +803,8 @@ function readGoogleDocZip($path, $docFolder, $check)
     }
 
     // setting delimiters for links
-    $startDelimiter = '<a';
-    $endDelimiter = '</a>';
-    $contentsWithVideoAudio = getReplaceLinks($content, $startDelimiter, $endDelimiter, false);
+    // $delimiters="<"
+    $contentsWithVideoAudio = getReplaceLinks($content, $delimiters, false);
     //  }
 
     //remove opening user delimiters
@@ -892,7 +877,7 @@ function readContents($headings, $content)
 
         $HeadingContent = new stdClass;
         $HeadingContent->heading = $firstDelimiter;
-        $HeadingContent->content = getContents($content, $firstDelimiter, $secondDelimiter);
+        $HeadingContent->content = $firstDelimiter . getContents($content, $firstDelimiter, $secondDelimiter);
 
 
         $bodyContent[] = $HeadingContent;
@@ -910,7 +895,7 @@ function readContents($headings, $content)
 
     $HeadingContent = new stdClass;
     $HeadingContent->heading = $firstDelimiter3;
-    $HeadingContent->content = $lastString2[0];
+    $HeadingContent->content = $firstDelimiter3 . $lastString2[0];
 
     $bodyContent[] = $HeadingContent;
 
@@ -1099,9 +1084,14 @@ function getHeadingsWithContents($bodyContent, $content)
         $check = '';
         $size = count($bodyContent) - 1;
         $count = 0;
+        $firstHeader = $bodyContent[0]->heading;
+        $upperString = explode($firstHeader, $content);
 
-        $documentId = insertToArchive($docName, $dbc, $reimport, $doc_id, $content);
+        $upperString = $upperString[0];
+
+        $documentId = insertToArchive($docName, $dbc, $reimport, $doc_id, $upperString);
         $prevContent = '';
+
 
         foreach ($bodyContent as $obj) {
             if (is_object($obj)) {
@@ -1113,8 +1103,7 @@ function getHeadingsWithContents($bodyContent, $content)
                     $contentPerChapter = $obj->content;
                     list($chapter_id, $chapter_name) = getHeadlineInformations($heading);
                     $string_lenghth = $contentPerChapter;
-                    //  $contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $contentPerChapter);
-                    // echo $chapter_id." == ". $chapter_name."<br>";
+
                     $check = tableOfContents($obj->heading, $chapter_id, $chapter_name, $contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
                 } else {
                     $last_obj = end($bodyContent);
@@ -1127,8 +1116,6 @@ function getHeadingsWithContents($bodyContent, $content)
                     $string_lenghth = $last_content;
                     list($last_chapter_id, $last_chapter_name) = getHeadlineInformations($lastkey);
                     $last_contentPerChapter = $last_content;
-                    // $last_contentPerChapter = preg_replace('/[^A-Za-z0-9\-]+/', ' ', $last_contentPerChapter);
-                    // echo $last_chapter_id." == ". $last_chapter_name;
                     $check = tableOfContents($last_obj->heading, $last_chapter_id, $last_chapter_name, $last_contentPerChapter, $string_lenghth, $upperCss, $lowerCss, $documentId);
 
 

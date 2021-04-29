@@ -28,7 +28,7 @@ JSPackage::TINYMCE();
         remove_script_host : false,
 
         save_onsavecallback: function () {
-            var doc_id = parent.grid_2.getSelectedRowId();
+            var chapter_id = parent.grid_2.getSelectedRowId();
             var main_doc_id = parent.grid_1.getSelectedRowId();
 
 
@@ -37,12 +37,19 @@ JSPackage::TINYMCE();
                 return;
             }
 
-            if (doc_id) {
+            if (chapter_id) {
                 parent.tocContentCell.progressOn();
-                var postData = {"notes": tinyMCE.activeEditor.getContent(), "id": doc_id};
+                parent.tab_2.progressOn();
+                var postData = {"notes": tinyMCE.activeEditor.getContent(), "id": chapter_id, "doc_id": main_doc_id};
                 $.post("../../controller/chapters.php?action=3", postData, function (data) {
-                    parent.tocContentCell.progressOff();
-                    parent.dhtmlx.message(data.text);
+                    $.get("../../controller/documents.php?action=2&id=" + data.doc_id, function (data_) {
+                        parent.tab_2.attachHTMLString(data_);
+                        parent.tab_2.showInnerScroll();
+                        parent.tab_2.progressOff();
+                        parent.tocContentCell.progressOff();
+                        parent.dhtmlx.message(data.text);
+
+                   }, "json");
                 }, 'json');
 
                 parent.grid_2.updateFromXML('controller/chapters.php?action=1&id=' + main_doc_id,true,true);

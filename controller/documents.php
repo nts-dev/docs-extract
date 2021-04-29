@@ -48,10 +48,16 @@ switch ($action) {
         $id = $_GET['id'];
         $query = "SELECT content FROM document WHERE id=" . $id;
         $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
-
         if ($row = mysqli_fetch_assoc($result)) {
-            echo json_encode($row["content"]);
+            $content = $row["content"];
         }
+        $query_toc= "SELECT content FROM toc WHERE doc_id=".$id;
+        $result = mysqli_query($dbc, $query_toc) or die(mysqli_error($dbc));
+        while ($row = mysqli_fetch_assoc($result)) {
+            $content .= $row["content"];
+        }
+        echo json_encode($content);
+
 
         break;
 
