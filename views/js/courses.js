@@ -44,7 +44,7 @@ grid_1.setImagesPath(DHTMLXPATH + 'skins/web/imgs/');
 grid_1.setHeader(["ID", "Name"]);
 grid_1.setColTypes("tree,ro");
 grid_1.setColSorting('str,str');
-grid_1.setInitWidthsP('50,*');
+grid_1.setInitWidthsP('40,*');
 grid_1.init();
 grid_1.load(baseURL + 'controller/documents.php?action=1');
 // grid_1.expandAll(true);
