@@ -11,38 +11,38 @@ switch ($action) {
 
     case 1:
 
-/*        echo '<?xml version="1.0"?>' . PHP_EOL;*/
-//        echo '<rows>';
-//
-//        treeDir();
-//
-//        echo '</rows>';
-//        break;
-
-        $query = 'SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
-       FROM document LEFT JOIN course_server ON document.id = course_server.document_id
-       LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc';
-        $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
-        header('Content-type:text/xml;charset=ISO-8859-1;');
-        echo '<?xml version="1.0"?>';
-
+        echo '<?xml version="1.0"?>' . PHP_EOL;
         echo '<rows>';
-        $server = "N/A";
-        $url = "Extracted from zip file";
 
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo '<row id="' . $row['id'] . '">';
-            echo "<cell><![CDATA[" . $row["id"] . "]]></cell>";
-            echo "<cell><![CDATA[" . $row["doc_name"] . "]]></cell>";
+        treeDir();
 
-            if ($row["local_course_id"])
-                echo "<cell><![CDATA[" . $row["local_course_id"] . "]]></cell>";
-
-            echo '</row>';
-        }
         echo '</rows>';
-
         break;
+
+//        $query = 'SELECT document.id,document.doc_name, moodle_servers.name,document.document_url,document.local_course_id
+//       FROM document LEFT JOIN course_server ON document.id = course_server.document_id
+//       LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc';
+//        $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+//        header('Content-type:text/xml;charset=ISO-8859-1;');
+/*        echo '<?xml version="1.0"?>';*/
+//
+//        echo '<rows>';
+//        $server = "N/A";
+//        $url = "Extracted from zip file";
+//
+//        while ($row = mysqli_fetch_assoc($result)) {
+//            echo '<row id="' . $row['id'] . '">';
+//            echo "<cell><![CDATA[" . $row["id"] . "]]></cell>";
+//            echo "<cell><![CDATA[" . $row["doc_name"] . "]]></cell>";
+//
+//            if ($row["local_course_id"])
+//                echo "<cell><![CDATA[" . $row["local_course_id"] . "]]></cell>";
+//
+//            echo '</row>';
+//        }
+//        echo '</rows>';
+//
+//        break;
 
     case 2:
         $id = $_GET['id'];
@@ -465,61 +465,39 @@ function treeDir()
     global $dbc;
 
 
-    $query = 'SELECT document.id,document.doc_name, moodle_servers.name,moodle_servers.id as server_id,document.document_url,document.local_course_id FROM
- document LEFT JOIN course_server ON document.id = course_server.document_id LEFT JOIN moodle_servers ON moodle_servers.id = course_server.server_id ORDER BY id asc ';
+    $query = 'SELECT document.id,document.doc_name, moodle_servers.name,moodle_servers.id as server_id,document.document_url,document.local_course_id FROM 
+              moodle_servers LEFT JOIN course_server ON moodle_servers.id = course_server.server_id LEFT JOIN document ON document.id = course_server.document_id ORDER BY server_id ASC, id asc';
     $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
-
     $objects = array();
-    $rootObjects = array();
-    $roots = array();
-    $server = -1;
     while ($row = mysqli_fetch_assoc($result)) {
-
-
-        if (!isset($rootObjects[$row['server_id']])) {
-            $rootObjects[$row['server_id']] = new stdClass;
-
-        }
-         $rootObj = $rootObjects[$row['server_id']];
-         $rootObj->id = $row['server_id'];
-         $rootObj->server_name = $row['name'];
-         $rootObjects[$row['server_id']]->children = array();
-        if ($row['server_id'] !== $server) {
-            $roots[] = $rootObj;
-        } else {
-            if (!isset($objects[$row['id']])) {
-                $objects[$row['id']] = new stdClass;
-            }
-            $obj = $objects[$row['id']];
-            $obj->id = $row['id'];
-            $obj->doc_name = $row['doc_name'];
-            $obj->remote_id = $row['local_course_id'];
-
-          $rootObj->children[$row['id']] = $obj;
-        }
-        $server = $row['server_id'];
+        $objects[$row['server_id']]['id'] = $row['server_id'];
+        $objects[$row['server_id']]['name'] = $row['name'];
+        $objects[$row['server_id']]['documents'][$row['id']]['id'] = $row['id'];
+        $objects[$row['server_id']]['documents'][$row['id']]['name'] = $row['doc_name'];
+        $objects[$row['server_id']]['documents'][$row['id']]['local_course_id'] = $row['local_course_id'];
     }
 
-    foreach ($roots as $obj) {
-        printXML($obj, true);
+    foreach ($objects as $server){
+        printXML($server, true);
     }
-
-    echo "<pre>";
-    print_r($roots);
 }
 
-function printXML(stdClass $obj, $isRoot = false)
+function printXML($server, $isRoot = false)
 {
-    echo '<row id="' . $obj->id . '">';
-    echo '<cell><![CDATA[' . $obj->id .']]></cell>';
-    echo '<cell><![CDATA[' . $obj->server_name .']]></cell>';
 
-    foreach ($obj->children as $child) {
-        echo '<row id="' . $child->id . '">';
-        echo '<cell><![CDATA[' . $child->id .']]></cell>';
-        echo '<cell><![CDATA[' . $child->doc_name .']]></cell>';
-        echo '<cell><![CDATA[' . $child->remote_id .']]></cell>';
+    echo '<row id="' . $server['id'] . ' " open="1">';
+    echo '<cell image="folder.gif"  ><![CDATA[  Server]]></cell>';
+    echo '<cell><![CDATA[' . $server['name']  .']]></cell>';
+    foreach ($server['documents'] as $document) {
+       if(isset($document['id'])){
+        echo '<row id="' . $document['id'] . '">';
+        echo '<cell><![CDATA[' . $document['id'] .']]></cell>';
+        echo '<cell><![CDATA[' . $document['name'] .']]></cell>';
+        echo '<cell><![CDATA[' . $document['local_course_id'].']]></cell>';
+        echo '</row>';
+    }
     }
 
-    echo '</row>';
+   echo '</row>';
+
 }

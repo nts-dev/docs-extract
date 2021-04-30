@@ -37,18 +37,17 @@ document_ribbon = a.attachRibbon({
 
 document_ribbon.attachEvent('onClick', onDocumentRibbonClick);
 
-grid_1 = a.attachGrid();
+ grid_1 = a.attachGrid();
 
 grid_1.setSkin('dhx_web');
-grid_1.setImagePath(DHTMLXPATH+'skins/web/imgs/');
-grid_1.setIconset("fontawesome");
+grid_1.setImagesPath(DHTMLXPATH + 'skins/web/imgs/');
 grid_1.setHeader(["ID", "Name", "Remote ID"]);
-grid_1.setColTypes("ro,ro,ro");
+grid_1.setColTypes("tree,ro,ro");
 grid_1.setColSorting('str,str,str');
-grid_1.setInitWidthsP('15,*,25');
+grid_1.setInitWidthsP('25,50,*');
 grid_1.init();
 grid_1.load(baseURL + 'controller/documents.php?action=1');
-
+// grid_1.expandAll(true);
 grid_1.attachEvent('onRowSelect', onGrid1RowSelect);
 
 function onDocumentRibbonClick(id) {
