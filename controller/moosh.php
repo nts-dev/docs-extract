@@ -278,11 +278,12 @@ switch ($action) {
             'filepath' => '/',           // any path beginning and ending in /
             'filename' => $file_name); // any filename
 
-        $file = $fs->get_file($fileinfo['contextid'], $fileinfo['component'], $fileinfo['filearea'],
-            $fileinfo['itemid'], $fileinfo['filepath'], $fileinfo['filename']);
-        if ($file) {
-            $file->delete();
-        }
+//        $file = $fs->get_file($fileinfo['contextid'], $fileinfo['component'], $fileinfo['filearea'],
+//            $fileinfo['itemid'], $fileinfo['filepath'], $fileinfo['filename']);
+//        if ($file) {
+//            $file->delete();
+//
+//        }
         $fs->create_file_from_string($fileinfo, $image_content);
         $files = $fs->get_area_files($context->id, 'mod_lesson', 'page_contents', $page_id);
        $imageUrl='';

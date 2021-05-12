@@ -26,6 +26,9 @@ JSPackage::TINYMCE();
         relative_urls: false,
         convert_urls: false,
         remove_script_host : false,
+        forced_root_block : "",
+        force_br_newlines : false,
+        force_p_newlines : false,
 
         save_onsavecallback: function () {
             var chapter_id = parent.grid_2.getSelectedRowId();
@@ -50,10 +53,11 @@ JSPackage::TINYMCE();
                         parent.dhtmlx.message(data.text);
 
                    }, "json");
+                    parent.grid_2.updateFromXML('controller/chapters.php?action=1&id=' + main_doc_id,true,true);
+                    parent.grid_archive.updateFromXML('controller/achived_chapters.php?action=1&id=' + main_doc_id,true,true);
                 }, 'json');
 
-                parent.grid_2.updateFromXML('controller/chapters.php?action=1&id=' + main_doc_id,true,true);
-                parent.grid_archive.updateFromXML('controller/achived_chapters.php?action=1&id=' + main_doc_id,true,true);
+
                 
             } else {
                 parent.dhtmlx.alert("No Row Selected!");

@@ -477,7 +477,7 @@ function addModulePageLessonSection($ids, $doc_id)
         $name = $row['chapter_id'] . " " . $row['chapter'];
         $content = str_replace("/CourseFiles/documentFiles/", $_SERVER['DOCUMENT_ROOT'] . "/CourseFiles/documentFiles/", $row['content']);
 
-        $content = $row["uppercss"] . $content . $row["lowercss"];
+        $content = $row["uppercss"] . html_entity_decode($content). $row["lowercss"];
         $moodle_id = $row['moodle_id'];
         $module_id = $row['module_id'];
         $lesson = $row['lesson_id'];
@@ -1368,7 +1368,6 @@ function getImageSource($Content, $module_id, $page_id, $isPage)
             $filename = 'images' . $counter . '.jpg';
             if ($filename) {
                 $new_src_url = replaceLinks($page_id, $module_id, $filename, $link, $isPage);
-
                 $Content = str_replace($old_src, $new_src_url, $Content);
 
             }
@@ -1460,7 +1459,9 @@ function replaceLinks($page_id, $module_id, $image_name, $link, $isPage)
     $context = stream_context_create($opts);
     $file = explode('.', $image_name);
     $file = end($file);
+
     $image_content = file_get_contents($link, false, $context);
+
     $obj = [
         'page_id' => $page_id,
         'module_id' => $module_id,
