@@ -42,23 +42,21 @@ JSPackage::TINYMCE();
 
             if (chapter_id) {
                 parent.tocContentCell.progressOn();
-                parent.tab_2.progressOn();
+
                 var postData = {"notes": tinyMCE.activeEditor.getContent(), "id": chapter_id, "doc_id": main_doc_id};
                 $.post("../../controller/chapters.php?action=3", postData, function (data) {
+                    parent.tocContentCell.progressOff();
+                    parent.dhtmlx.message(data.text);
+                    parent.grid_2.updateFromXML('controller/chapters.php?action=1&id=' + main_doc_id,true,true);
+                    parent.grid_archive.updateFromXML('controller/achived_chapters.php?action=1&id=' + main_doc_id,true,true);
+
+                    parent.tab_2.progressOn();
                     $.get("../../controller/documents.php?action=2&id=" + data.doc_id, function (data_) {
                         parent.tab_2.attachHTMLString(data_);
                         parent.tab_2.showInnerScroll();
                         parent.tab_2.progressOff();
-                        parent.tocContentCell.progressOff();
-                        parent.dhtmlx.message(data.text);
-
                    }, "json");
-                    parent.grid_2.updateFromXML('controller/chapters.php?action=1&id=' + main_doc_id,true,true);
-                    parent.grid_archive.updateFromXML('controller/achived_chapters.php?action=1&id=' + main_doc_id,true,true);
                 }, 'json');
-
-
-                
             } else {
                 parent.dhtmlx.alert("No Row Selected!");
             }
