@@ -486,17 +486,18 @@ function printXML($server, $isRoot = false)
 {
 
     echo '<row id="' . $server['id'] . ' " open="1">';
-    echo '<cell image="folder.gif"  ><![CDATA[  Server]]></cell>';
-    echo '<cell><![CDATA[' . $server['name']  .']]></cell>';
-    foreach ($server['documents'] as $document) {
-       if(isset($document['id'])){
-        echo '<row id="' . $document['id'] . '">';
-        echo '<cell><![CDATA[' . $document['id'] .']]></cell>';
-        echo '<cell><![CDATA[' . $document['name'] .']]></cell>';
-        echo '<cell><![CDATA[' . $document['local_course_id'].']]></cell>';
-        echo '</row>';
-    }
-    }
+
+        echo '<cell image="folder.gif" colspan="3" ><![CDATA[  ' . $server['name'] . ']]></cell>';
+
+        foreach ($server['documents'] as $document) {
+            if (isset($document['id'])) {
+                echo '<row id="' . $document['id'] . '">';
+                echo '<cell><![CDATA[' . $document['id'] . ']]></cell>';
+                echo '<cell><![CDATA[' . $document['name'] . ']]></cell>';
+                echo '<cell><![CDATA[' . $document['local_course_id'] . ']]></cell>';
+                echo '</row>';
+            }
+        }
 
    echo '</row>';
 

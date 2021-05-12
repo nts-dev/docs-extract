@@ -41,10 +41,11 @@ document_ribbon.attachEvent('onClick', onDocumentRibbonClick);
 
 grid_1.setSkin('dhx_web');
 grid_1.setImagesPath(DHTMLXPATH + 'skins/web/imgs/');
-grid_1.setHeader(["ID", "Name"]);
-grid_1.setColTypes("tree,ro");
-grid_1.setColSorting('str,str');
-grid_1.setInitWidthsP('40,*');
+grid_1.setHeader(["ID", "Name","Remote ID"]);
+grid_1.setColTypes("tree,ro,ro");
+grid_1.setColSorting('str,str,str');
+grid_1.setInitWidthsP('30,*,20');
+grid_1.enableCollSpan(true);
 grid_1.init();
 grid_1.load(baseURL + 'controller/documents.php?action=1');
 // grid_1.expandAll(true);
