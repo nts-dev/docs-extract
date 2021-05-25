@@ -4,8 +4,11 @@ document_ribbon = a.attachRibbon({
         {
             type: "block", text: "Course document", text_pos: "top", mode: "cols",
             list: [
+                {id: "auth", type: "button", text: "Authenticate", img: "fas fa-key", imgdis: "fas fa-key"},
+                {type: "newLevel"},
                 {id: "new", type: "button", text: "New", img: "fas fa-file-import", imgdis: "fas fa-file-import"},
                 {type: "newLevel"},
+
                 {id: "delete", type: "button", text: "Delete", img: "fa fa-trash", imgdis: "fa fa-trash"},
                 {type: "newLevel"},
                 {id: "update_document", type: "button", text: "Update", img: "fa fa-edit", imgdis: "fa fa-edit",},
@@ -18,17 +21,17 @@ document_ribbon = a.attachRibbon({
                     imgdis: "fas fa-file-export"
                 },
                 {type: "newLevel"},
-                {id: "restore", type: "button", text: "Restore", img: "fa fa-undo fa-3x", imgdis: "fa fa-undo fa-3x"},
+                {id: "restore", type: "button", text: "Restore", img: "fas fa-undo-alt", imgdis: "fas fa-undo-alt"},
 
                 {type: "newLevel"},
-                {id: "backup", type: "button", text: "Backup", img: "fa fa-repeat", imgdis: "fa fa-repeat"},
+                {id: "backup", type: "button", text: "Backup", img: "fas fa-redo-alt", imgdis: "fas fa-redo-alt"},
                 {type: "newLevel"},
                 {
                     id: "sort",
                     type: "button",
                     text: "Sort",
-                    img: "fa fa-sort-numeric-asc",
-                    imgdis: "fa fa-sort-numeric-asc"
+                    img: "fas fa-sort-numeric-up",
+                    imgdis: "fas fa-sort-numeric-up"
                 },
             ]
         },
