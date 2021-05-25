@@ -89,7 +89,7 @@ include('../includes.php');
         }
 
         .dhtmlxribbon_dhx_terrace .dhxrb_block_base {
-            height: 110px;
+            height: 107px;
             width: auto;
         }
     </style>
