@@ -428,7 +428,7 @@ function authenticateWindow() {
 
         {
             type: "fieldset",
-            label: "Drag And Drop JSON file here",
+            label: "Drag And Drop JSON Authentication Key  here",
             iconset: "awesome",
             width: myWidth * 0.2,
             list: [{
