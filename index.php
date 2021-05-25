@@ -85,7 +85,7 @@ include('../includes.php');
         }
 
         .dhxlayout_base_dhx_terrace div.dhx_cell_layout div.dhx_cell_ribbon_def div.dhtmlxribbon_dhx_terrace.dhxrb_without_tabbar {
-            height: 120px;
+            height: 115px;
         }
 
         .dhtmlxribbon_dhx_terrace .dhxrb_block_base {
