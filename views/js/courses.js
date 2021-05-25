@@ -418,7 +418,7 @@ function getExtension(filename) {
 }
 function authenticateWindow() {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.4)
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.42)
     window_4.setText('Authenticate Documents');
     window_4.setModal(1);
     window_4.button('park').hide();
