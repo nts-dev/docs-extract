@@ -1666,7 +1666,6 @@ function insertLessonPage($obj, $id)
     $serverurl = $domainname . "/data_content.php?action=5";
     $resp = $curl->post($serverurl, $obj);
     $res = json_decode($resp);
-
     return $res->data->response;
 }
 
