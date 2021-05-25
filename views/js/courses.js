@@ -59,7 +59,9 @@ function onDocumentRibbonClick(id) {
     if (id === 'new') {
         openUploadWindow(0, 0);
     }
-
+    if (id === 'auth') {
+        authenticateWindow();
+    }
     if (id === 'delete') {
 
         if (doc_id == null) {
@@ -366,9 +368,7 @@ function openUploadWindow(reimport, doc_id) {
                                 dhtmlx.alert({title: data[item].errorMessage, text: data[item].text});
                             }
                         }
-                        // grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1', true, true);
-                        // tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
-                        // tab_2.detachObject(true);
+
 
                         if (reimport > 0) {
 
@@ -416,6 +416,61 @@ function getExtension(filename) {
     var parts = filename.split('.');
     return parts[parts.length - 1];
 }
+function authenticateWindow() {
+    var windows = new dhtmlXWindows();
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.25, myHeight * 0.38)
+    window_4.setText('Authenticate Documents');
+    window_4.setModal(1);
+    window_4.button('park').hide();
+    window_4.button('minmax').hide();
+
+    var formData = [
+
+        {
+            type: "fieldset",
+            label: "Drag And Drop JSON file here",
+            iconset: "awesome",
+            width: myWidth * 0.2,
+            list: [{
+                type: "upload",
+                name: "myFiles",
+                inputWidth: myWidth * 0.2,
+                autoStart: true,
+                swfPath: baseURL + "controller/uploader.swf",
+                swfUrl: baseURL + "controller/upload.php",
+                autoRemove: true,
+            }]
+        },
+        {
+            type: "fieldset",
+            label: "Description ",
+            labelInline: true,
+            width: myWidth * 0.2,
+            list: [
+                {
+                    type: "input", name: "details", label: "Key Details", value: "", inputWidth: myWidth * 0.2,
+                    value: "", rows: 3,
+                    note: {text: "Describe your key."}
+                },
+            ]
+        },
+
+
+    ];
+
+    var form_2 = window_4.attachForm(formData);
+
+    form_2.attachEvent("onUploadFail", function (realName) {
+        window_4.close();
+        dhtmlx.alert({
+            title: 'Error',
+            expire: 2000,
+            text: realName+" To be programmed"
+        });
+    });
+
+
+}
 function openPrivateIpsWindow(ips) {
     var windows = new dhtmlXWindows();
     var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
@@ -425,12 +480,11 @@ function openPrivateIpsWindow(ips) {
     window_4.button('minmax').hide();
 
 
-           // window_4.close();
-           // return true;
+    // window_4.close();
+    // return true;
 
 
 }
-
 function openUploadFolderWindow(docname) {
     var windows = new dhtmlXWindows();
     var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
