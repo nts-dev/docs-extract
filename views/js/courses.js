@@ -418,7 +418,7 @@ function getExtension(filename) {
 }
 function authenticateWindow() {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.42)
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.3)
     window_4.setText('Authenticate Documents');
     window_4.setModal(1);
     window_4.button('park').hide();
@@ -440,20 +440,21 @@ function authenticateWindow() {
                 swfUrl: baseURL + "controller/upload.php",
                 autoRemove: true,
             }]
-        },
-        {
-            type: "fieldset",
-            label: "Description ",
-            labelInline: true,
-            width: myWidth * 0.2,
-            list: [
-                {
-                    type: "input", name: "details", label: "Key Details", value: "", inputWidth: myWidth * 0.2,
-                    value: "", rows: 3,
-                    note: {text: "Describe your key."}
-                },
-            ]
-        },
+        }
+        // ,
+        // {
+        //     type: "fieldset",
+        //     label: "Description ",
+        //     labelInline: true,
+        //     width: myWidth * 0.2,
+        //     list: [
+        //         {
+        //             type: "input", name: "details", label: "Key Details", value: "", inputWidth: myWidth * 0.2,
+        //             value: "", rows: 3,
+        //             note: {text: "Describe your key."}
+        //         },
+        //     ]
+        // },
 
 
     ];
