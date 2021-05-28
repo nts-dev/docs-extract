@@ -16,8 +16,8 @@ grid_2.setSkin('dhx_web');
 grid_2.setImagePath(DHTMLXPATH+'skins/web/imgs/');
 grid_2.setIconset("fontawesome");
 grid_2.setHeader(["Name", "Update", "Updated", "Changed", "Inserted"]);
-grid_2.setColTypes("tree,ch,icon,icon,icon");
-grid_2.setColSorting('str,int,str,str,str');
+grid_2.setColTypes("tree,ch,ch,ch,ch");
+grid_2.setColSorting('str,int,int,int,int');
 grid_2.setInitWidthsP('50,*,*,*,*');
 grid_2.init();
 
@@ -44,6 +44,8 @@ type: "fieldset",
     {type:"input",name:"url",label:"Course URL/link",value: "",
         value:"", rows:3,
         note:{text:"Google document Course link."}},
+   {type:"checkbox",name:"url",label:"Made in Moodle",checked:"false",
+         note:{text:"Course Made in Moodle?"}},
     {type:"input",name:"local_id",label:"Remote ID",value: "",
         value:"",
         note:{text:"Remote ID."}},

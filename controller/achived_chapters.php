@@ -218,19 +218,19 @@ function printXML(stdClass $obj, $isRoot = false)
         echo '<cell>0</cell>';
 
     if($obj->update==1)
-        echo '<cell>check-square-o</cell>';
+        echo '<cell>1</cell>';
     else
-        echo '<cell >square-o</cell>';
+        echo '<cell >0</cell>';
 
     if($obj->changed==1)
-        echo '<cell>check-square-o</cell>';
+        echo '<cell>1</cell>';
     else
-        echo '<cell >square-o</cell>';
+        echo '<cell >0</cell>';
 
     if($obj->delete==1)
-        echo '<cell>check-square-o</cell>';
+        echo '<cell>1</cell>';
     else
-        echo '<cell >square-o</cell>';
+        echo '<cell >0</cell>';
     foreach ($obj->children as $child) {
         printXML($child);
     }

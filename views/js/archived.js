@@ -13,8 +13,8 @@ grid_archive = cell_2.attachGrid();
 grid_archive.setSkin('dhx_web');
 grid_archive.setImagePath(DHTMLXPATH+'skins/web/imgs/');
 grid_archive.setHeader(["Name", "Restore", "Updated", "Changed", "Deleted"]);
-grid_archive.setColTypes("tree,ch,icon,icon,icon");
-grid_archive.setColSorting('str,int,str,str,str');
+grid_archive.setColTypes("tree,ch,ch,ch,ch");
+grid_archive.setColSorting('str,int,int,int,int');
 grid_archive.setInitWidthsP('50,*,*,*,*');
 grid_archive.init();
 

@@ -4,7 +4,7 @@ document_ribbon = a.attachRibbon({
         {
             type: "block", text: "Course document", text_pos: "top", mode: "cols",
             list: [
-                {id: "auth", type: "button", text: "Authenticate", img: "fas fa-key", imgdis: "fas fa-key"},
+                {id: "auth", type: "button", text: "Add Key", img: "fas fa-key", imgdis: "fas fa-key"},
                 {type: "newLevel"},
                 {id: "new", type: "button", text: "New", img: "fas fa-file-import", imgdis: "fas fa-file-import"},
                 {type: "newLevel"},
@@ -193,7 +193,7 @@ function onGrid1RowSelect(id, ind) {
 
 function openUploadWindow(reimport, doc_id) {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.64)
     window_4.setText('Import Document');
     window_4.setModal(1);
     window_4.button('park').hide();
@@ -202,15 +202,27 @@ function openUploadWindow(reimport, doc_id) {
     var formData = [
         {
             type: "fieldset",
-            label: "Enter document link",
+            label: "Enter document link and Authentication Key",
             iconset: "awesome",
             width: myWidth * 0.27,
             list: [{
                 type: "input",
                 name: "url",
                 inputWidth: myWidth * 0.24, required: true,
-                preMessage: "Enter your google document url here"
+                note: {text: "Enter your google document url here."}
             },
+                {
+                    type: "label", labelWidth: myWidth * 0.15
+                },
+                {type: "newcolumn"},
+                {
+                    type: "combo",
+                    label: "Authentication Key  ",
+                    name: "key",
+                    labelWidth: myWidth * 0.1,
+                    inputWidth: myWidth * 0.1,
+                    note: {text: "Select Authentication Key here."}
+                },
             ]
         },
         {
@@ -243,7 +255,7 @@ function openUploadWindow(reimport, doc_id) {
         },
         {
             type: "fieldset",
-            label: "Select Export Server ",
+            label: "Select Export Server",
             labelInline: true,
             width: myWidth * 0.27,
             list: [
@@ -254,6 +266,7 @@ function openUploadWindow(reimport, doc_id) {
                     labelWidth: myWidth * 0.1,
                     inputWidth: myWidth * 0.1,
                 },
+
             ]
         },
         {
@@ -271,6 +284,7 @@ function openUploadWindow(reimport, doc_id) {
 
     var form_2 = window_4.attachForm(formData);
     var combo_server = form_2.getCombo("server");
+    var authKey = form_2.getCombo("key");
     window_4.progressOn();
     if (reimport) {
         $.get(baseURL + "controller/documents.php?action=14&id=" + doc_id, function (data) {
@@ -293,13 +307,28 @@ function openUploadWindow(reimport, doc_id) {
             });
         }
     });
+
+    authKey.load(baseURL + "controller/chapters.php?action=17&id=" + doc_id, function () {
+        var key_id = authKey.getSelectedValue();
+        window_4.progressOff();
+        if (!key_id) {
+            dhtmlx.alert({
+                title: 'Error',
+                expire: 2000,
+                text: "Please add authentication Key to proceed!"
+            });
+        }
+
+    });
 		combo_server.attachEvent("onSelectionChange", function(){
 			server_id = combo_server.getSelectedValue();
 			
 		 });
+
+
     form_2.attachEvent("onFileAdd",function(realName){
         var myUploader = form_2.getUploader("myFiles");
-        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id + "&user_id=" + user_id);
+        myUploader.setURL("controller/upload.php?action=1&reimport=" + reimport + "&doc_id=" + doc_id + "&server=" + server_id + "&user_id=" + user_id + "&key=" + authKey.getSelectedText());
     });
     form_2.attachEvent("onUploadFile",function(realName,serverName){
         if (getExtension(realName)=='htm') {
@@ -317,7 +346,6 @@ function openUploadWindow(reimport, doc_id) {
         grid_1.updateFromXML(baseURL + 'controller/documents.php?action=1');
         tocContentIframe.contentWindow.tinymce.activeEditor.setContent("");
         tab_2.detachObject(true);
-
         grid_2.updateFromXML(baseURL + 'controller/chapters.php?action=1&id=' + doc_id);
         grid_archive.updateFromXML(baseURL + 'controller/achived_chapters.php?action=1&id=' + doc_id);
 
@@ -346,7 +374,8 @@ function openUploadWindow(reimport, doc_id) {
                         url: url,
                         details: details,
                         server: server_id,
-                        user_id: user_id
+                        user_id: user_id,
+                        key: authKey.getSelectedText()
                     };
                     window_4.progressOn();
                     $.post(baseURL + "controller/upload.php?action=2", postdata, function (data) {
@@ -425,7 +454,6 @@ function authenticateWindow() {
     window_4.button('minmax').hide();
 
     var formData = [
-
         {
             type: "fieldset",
             label: "Drag And Drop JSON Authentication Key File here",
@@ -441,33 +469,35 @@ function authenticateWindow() {
                 autoRemove: true,
             }]
         }
-        // ,
-        // {
-        //     type: "fieldset",
-        //     label: "Description ",
-        //     labelInline: true,
-        //     width: myWidth * 0.2,
-        //     list: [
-        //         {
-        //             type: "input", name: "details", label: "Key Details", value: "", inputWidth: myWidth * 0.2,
-        //             value: "", rows: 3,
-        //             note: {text: "Describe your key."}
-        //         },
-        //     ]
-        // },
+
 
 
     ];
 
     var form_2 = window_4.attachForm(formData);
+    form_2.attachEvent("onFileAdd",function(realName){
+        var myUploader = form_2.getUploader("myFiles");
+        myUploader.setURL("controller/upload.php?action=4");
+    });
 
     form_2.attachEvent("onUploadFail", function (realName) {
         window_4.close();
         dhtmlx.alert({
             title: 'Error',
             expire: 2000,
-            text: realName+" To be programmed"
+            text: realName+ " Error Occured!"
         });
+    });
+    form_2.attachEvent("onUploadComplete", function (count) {
+        dhtmlx.message({
+            title: 'Success',
+            expire: 20000,
+            text:"Your credential File has been Uploaded Successfully"
+        });
+
+
+        window_4.close();
+
     });
 
 

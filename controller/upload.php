@@ -11,6 +11,7 @@ include "Files.php";
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
 define('UPLOADFOLDER', 3);
+define('UPLOADJSON', 4);
 libxml_use_internal_errors(true);
 $headings = array();
 $upperCss = "";
@@ -60,6 +61,7 @@ switch ($action) {
         try {
             $reimport = filter_input(INPUT_GET, 'reimport');
             $doc_id = filter_input(INPUT_GET, 'doc_id');
+
             $server = filter_input(INPUT_GET, 'server', FILTER_SANITIZE_NUMBER_INT);
             $user_id = filter_input(INPUT_GET, 'user_id', FILTER_SANITIZE_NUMBER_INT);
 
@@ -151,11 +153,77 @@ switch ($action) {
 
         break;
 
+    case UPLOADJSON:
+
+        try {
+            if ($_FILES["file"]["name"]) {
+                $filename = $_FILES["file"]["name"];
+                $source = $_FILES["file"]["tmp_name"];
+                $type = $_FILES["file"]["type"];
+
+//                $name = explode(".", $filename);
+//                $fileName = $name[0];
+
+                $accepted_types = array('application/json');
+                foreach ($accepted_types as $mime_type) {
+                    if ($mime_type == $type) {
+                        $okay = true;
+                        break;
+                    }
+                }
+
+                $path_html = basename(__DIR__) . '/';
+                $filenoext = basename($filename, '.json');
+               // $path =  basename(__DIR__) ;
+                $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/Keys/";
+
+                if (!file_exists($path)) {
+                    if (!mkdir($path, 0774, true) && !is_dir($path)) {
+                        throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+                    }
+                }
+
+                //$myDir = $path . $filenoext; // target directory
+                $myFile = $path . $filename; // target zip file
+                $dir = str_replace('.json', '', $myFile);
+
+                if (strpos($myFile, '.json') !== false ) {
+                    if (move_uploaded_file($source, $myFile)) {
+                        $myMsg = "Your .json file uploaded successfully.";
+                        $updateMsg = "Course Updated.";
+
+                        insertKeys($filename,$myFile);
+
+                        print_r("{state: true, name:'" . str_replace("'", "\\'", $filename) . "', extra: {info: '$myMsg '}}");
+                    } else {
+                        $myMsg = "There was a problem with the upload.";
+                        header("Content-Type: text/json");
+                        print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
+                    }
+                } else {
+                    $myMsg = "Upload a valid file i.e .json file!.";
+                    header("Content-Type: text/json");
+                    print_r("{state: false, name:" . $filename . "', extra: {info: '$myMsg '}}");
+                }
+
+            }
+
+            // echo json_encode($responses);
+        } catch (Exception $e) {
+            $response = [
+                'response' => false, 'text' => $e->getMessage()
+            ];
+            $responses[] = $response;
+            echo json_encode($responses);
+        }
+
+        break;
     case IMPORTURL:
 
         try {
             $reimport = filter_input(INPUT_POST, 'reimport');
             $doc_id = filter_input(INPUT_POST, 'doc_id');
+            $Key = filter_input(INPUT_POST, 'key');
             $fileId = filter_input(INPUT_POST, 'url');
             $details = filter_input(INPUT_POST, 'details');
 
@@ -173,7 +241,7 @@ switch ($action) {
             $fileId = $fileId[1];
             $fileId = explode("/", $fileId);
             $fileId = $fileId[0];
-            $client = getClient();
+            $client = getClient($Key);
 
             $docName = getDocumentName($client, $fileId);
             if ($docName != "")
@@ -203,9 +271,10 @@ switch ($action) {
         } catch (Exception $e) {
             $response = [
                 'response' => false, 'text' => $e->getMessage()
+                // 'response' => true, 'server' => $server, 'text' => 'Your document has been extracted successfully!'
             ];
             $responses[] = $response;
-            echo json_encode($responses);
+       echo json_encode($responses);
             //echo json_encode(array('response' => false, 'text' => $e->getMessage()));
         }
         break;
@@ -248,11 +317,13 @@ switch ($action) {
     default:
         break;
 }
-function getClient()
+function getClient($Key)
 {
     try {
         $client = new Google_Client();
-        $client->setAuthConfig('extractdocument.json');
+        $key =$_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/Keys/".$Key;
+
+        $client->setAuthConfig($key);
         $client->addScope(Google_Service_Docs::DOCUMENTS);
         $client->addScope(Google_Service_Drive::DRIVE);
         $client->addScope(Google_Service_Drive::DRIVE_FILE);
@@ -265,13 +336,29 @@ function getClient()
             echo json_encode(
                 array('response' => false,
                     'text' => 'The link you entered is invalid or has some typo mistakes,check the link and try again !'));
-        else
-            echo json_encode(array('response' => false,
-                'text' => 'No access has been Granted to the service account!!
-                 Please share the document with ntsdocuments@extractdocument.iam.gserviceaccount.com, for the program to read and try again!'));
+        else {
+//            echo json_encode(array('response' => false,
+//                'text' => 'No access has been Granted to the service account!!
+//                 Please share the document with ntsdocuments@extractdocument.iam.gserviceaccount.com, for the program to read and try again!'));
+
+            $response = [
+                'response' => false, 'text' => $e->getMessage()
+            ];
+            $responses[] = $response;
+            echo json_encode($responses);
+        }
     }
     return $client;
 }
+function insertKeys($name,$myFile){
+    global $dbc;
+    $query = 'INSERT INTO authkeys (name,path) VALUES ("' . $name . '","' . $myFile . '")
+    ON DUPLICATE KEY UPDATE name=values(name)';
+
+    $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+
+}
+
 
 function insertPermission($service, $fileId, $type, $role)
 {

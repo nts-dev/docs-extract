@@ -558,6 +558,81 @@ switch ($action) {
         echo json_encode($response);
 
         break;
+
+    case 17:
+        $ids = $_GET['id'];
+        $id = 0;
+
+//        if($ids){
+//            $query_1 = "SELECT * from authkeys";
+//            $result_1 = mysqli_query($dbc, $query_1) or die(mysqli_error($dbc));
+//
+//
+//
+//
+//            if ($row = mysqli_fetch_assoc($result_1)) {
+//                $id = $row["id"];
+//            }
+//
+//        }
+
+        $query = "SELECT * from authkeys";
+        $result = mysqli_query($dbc, $query) or die(mysqli_error($dbc));
+
+        header('Content-type:text/xml;charset=ISO-8859-1;');
+        echo '<?xml version="1.0" ?>';
+
+        echo '<complete>';
+        $serverNames = array();
+        $count=0;
+        while ($row = mysqli_fetch_assoc($result)) {
+
+//            if($id>0) {
+//                if ($row["id"] === $id) {
+//                    echo '<option value="' . $row["id"] . '" selected ="1" ><![CDATA[' . $row["name"] . ']]></option>';
+//                }
+//                else {
+//                    echo '<option value="' . $row["id"] . '" ><![CDATA[' . $row["name"] . ']]></option>';
+//                }
+//            }
+//            else{
+//                $serverNames[$row["id"]]=$row["name"];
+//            }
+//        }
+//        if(array_search("education.nts.nl",$serverNames)){
+//            foreach($serverNames as $id => $name){
+//                if($name=="education.nts.nl"){
+//                    echo '<option value="'.$id.'" selected ="1" ><![CDATA['.$name.']]></option>';
+//                }
+//                else{
+//                    echo '<option value="'.$id.'" ><![CDATA['.$name.']]></option>';
+//                }
+//            }
+//        }
+//        else{
+//            $counter=0;
+//            foreach($serverNames as $id => $name){
+//                if($counter===0){
+//                    echo '<option value="'.$id.'" selected ="1" ><![CDATA['.$name.']]></option>';
+//                }
+//                else{
+//                    echo '<option value="'.$id.'" ><![CDATA['.$name.']]></option>';
+//                }
+//            }
+//            $counter++;
+//        }
+if($count===0) {
+    echo '<option value="' . $id . '" selected ="1" ><![CDATA[' . $row["name"] . ']]></option>';
+}
+else{
+    echo '<option value="' . $id . '" ><![CDATA[' . $row["name"] . ']]></option>';
+}
+
+$count++;
+
+        }
+        echo '</complete>';
+        break;
 }
 
 function getHeadlineInformations($string)
@@ -631,20 +706,23 @@ function printXML(stdClass $obj, $isRoot = false)
         echo '<cell>0</cell>';
 
     if($obj->update==1)
-        echo '<cell>check-square-o</cell>';
+        echo '<cell >1</cell>';
     else
-        echo '<cell >square-o</cell>';
+
+    echo '<cell>0</cell>';
 
     if($obj->changed==1)
-        echo '<cell>check-square-o</cell>';
+        echo '<cell >1</cell>';
     else
-        echo '<cell >square-o</cell>';
+
+    echo '<cell>0</cell>';
 
     if($obj->insert==1) {
-        echo '<cell>check-square-o</cell>';
+        echo '<cell >1</cell>';
     }
     else {
-        echo '<cell >square-o</cell>';
+
+        echo '<cell>0</cell>';
     }
     foreach ($obj->children as $child) {
         printXML($child);

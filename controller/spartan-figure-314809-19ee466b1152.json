@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "spartan-figure-314809",
+  "private_key_id": "19ee466b1152fbab4f3da660187562fef295b5d3",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDabGITzfnNvrSc\nE370dBF/0lxEzNTYVBMQNVisLl1PHmkyoniB22FcjBGnh8CNsv12oNPwDsxP7X/F\nt68KLSxGU5euesGcbaajFi7JqVYZ3Tv+Pf95eLvvBmomVkz3qznErb13mSqXlWJZ\nEBQKT0sxU4Y+PUUWVoPTuazi7vNXWlEEd3t8hrOBFPrqWAXD3IBSgSe75zZnWBau\n3+PgrjwR+cKgMUKPsBqz3c4U9dV8oPqBY3Gbxuy+HXyozsFIoV2ZpOZAh+GNep+g\ngp6RlU22lIoPjfSRzf9gOW182gWHxXfftbw86hRnKufqK4pqqHkxdHeuiwqJ3RQN\nZXIs9UqFAgMBAAECggEAKL2OjaMdtQKdLX91bqM3oF/cVfjeunr0E1Hf+D2tqdRC\nSu+DCrWgs2Js6JKpl8SLAlV9MomQElh6PKbGP1+tonB1GlZLRqItMr4we+zZ4nkh\nd4qY3E9ovmyz3/K46HlHjSfa7zPifeOfNH2LP2EK5Whu4a0L9d6tOBCp7qojOWeG\n5SI6az1UQWybVnCvl9SvM4ttU5ATrMUx8zb+W6KOJd5bSqkO4rWWZ4Jn4DKFM0qe\ncXe8lOgEGaEDpt5ppyr19ay7hxATRNLxc9FOU7zfMfV1Rs4sDwxxW1MUBlrmXXZJ\n49pfMrIpyT7cOkfoWwc0Hf1wE3iGZ7FLCGr6ELP9AQKBgQD38gvlMJ6B7v0P3MOt\n5bKDGLD49zXUq6SyisreTyWvN4pRENUE0FILuSEs5AlfD4LWfi3e75wp32TMBRJk\n0FxSx+S/dhF59kl/Q2JUsDFfVHokEqT6OCp+JzFOwJ3lQLdSW6ile51Cdr9a9ZqC\nZnUiMC+gMc8zsDJrPK8DCm29ewKBgQDhhNN4hw27pi4Z5nVjwJZoR1Qvdasy42Or\nVigWmjnv3C8Vj0Trve7053PuNGROw+goHY0RvNMd+hc9NR3brsp2s4mCMBVZv/D+\ntt6Re0q9JrJfXVcopjGR0GTzUAbq0zArq4BKwO+97jqDt37hwYd2ZMEyRkVZhr2z\nq2SfegaX/wKBgHYI7W7DMYJLon9Nqn37jnroYz9yeFbxC2vPtPoWFauPNjKXX8F1\n5skb7dYwDOILQU8ZLH8n9GDer16Mv4/svTbPYG9hJrq3649BJeuJIUfvsGHB2nYg\nDOKXh9qkycYcg+kaJ3P4IApG+5uytkaDvhlzdQi/DZPeunHgprQ837dHAoGABJ/0\ntkQOxApkZ6OSRLluXDUaRN7k4+ZF5P2fVNdU2NZrIMYPY8ZBYERe3EO2yua5nBj/\nC54TtkmqsFamhhrPjB+ickkKJw0IpDCb39/naHmirtH7N5ow6gycBWFewvIRytN5\njg7m275G9OyObZLKdGMckytdwLhCq6yYI60c9YECgYBfXj7DG7hoQWM98E65Sa78\n61DGOeEReWzs/h+8c5ne8s0zUQSnn5CH3HIPBmX4nKapHr3oCIQUWgjnk525VmvG\nspfLdQy+PzECY2TsUPuHKxoNqN5tMhdlu1MjWxyzy5BBxUcNcOM3YpwEyjkUUGDZ\nGb5YhamiFdWCTB5ygzVqXQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "docextract@spartan-figure-314809.iam.gserviceaccount.com",
+  "client_id": "109244142965739063366",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/docextract%40spartan-figure-314809.iam.gserviceaccount.com"
+}
