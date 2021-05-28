@@ -193,7 +193,7 @@ function onGrid1RowSelect(id, ind) {
 
 function openUploadWindow(reimport, doc_id) {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.64)
+    var window_4 = windows.createWindow('window_4', myWidth * 0.322, myHeight * 0.09, myWidth * 0.3, myHeight * 0.64)
     window_4.setText('Import Document');
     window_4.setModal(1);
     window_4.button('park').hide();
@@ -450,7 +450,7 @@ function getExtension(filename) {
 }
 function authenticateWindow() {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.3)
+    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.4)
     window_4.setText('Authenticate Documents');
     window_4.setModal(1);
     window_4.button('park').hide();
