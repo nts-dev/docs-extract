@@ -312,11 +312,14 @@ function openUploadWindow(reimport, doc_id) {
         var key_id = authKey.getSelectedValue();
         window_4.progressOff();
         if (!key_id) {
+            window_4.close();
             dhtmlx.alert({
                 title: 'Error',
                 expire: 2000,
                 text: "Please add authentication Key to proceed!"
             });
+
+
         }
 
     });
