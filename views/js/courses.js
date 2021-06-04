@@ -207,6 +207,22 @@ function openUploadWindow(reimport, doc_id) {
         },
         {
             type: "fieldset",
+            label: "Select Export Server",
+            labelInline: true,
+            width: myWidth * 0.27,
+            list: [
+                {
+                    type: "combo",
+                    label: "Server  ",
+                    name: "server",
+                    labelWidth: myWidth * 0.1,
+                    inputWidth: myWidth * 0.1,
+                },
+
+            ]
+        },
+        {
+            type: "fieldset",
             label: "Enter document link and Authentication Key",
             iconset: "awesome",
             width: myWidth * 0.27,
@@ -258,22 +274,7 @@ function openUploadWindow(reimport, doc_id) {
                 },
             ]
         },
-        {
-            type: "fieldset",
-            label: "Select Export Server",
-            labelInline: true,
-            width: myWidth * 0.27,
-            list: [
-                {
-                    type: "combo",
-                    label: "Server  ",
-                    name: "server",
-                    labelWidth: myWidth * 0.1,
-                    inputWidth: myWidth * 0.1,
-                },
 
-            ]
-        },
         {
             type: "label", labelWidth: myWidth * 0.27, list: [
                 {
