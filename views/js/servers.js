@@ -112,11 +112,10 @@ function ontoolbar_4Click (id) {
 function addUpdateServer(domain, token, path, name,selectedId,check) {
 
     var windows = new dhtmlXWindows();
-    window_8 = windows.createWindow('window_8', myWidth * 0.32, myWidth * 0.0555, myWidth * 0.333, myWidth * 0.24);
+    window_8 = windows.createWindow('window_8', 0, 0, myWidth * 0.333, myWidth * 0.24);
     window_8.setText('Add Server');
-    window_8.setModal(1);
-    window_8.button('park').hide();
-    window_8.button('minmax').hide();
+
+    window_8.center();
 
     //var size = window_8.getWidth();
 

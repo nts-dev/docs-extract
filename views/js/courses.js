@@ -193,13 +193,18 @@ function onGrid1RowSelect(id, ind) {
 
 function openUploadWindow(reimport, doc_id) {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.322, myHeight * 0.03, myWidth * 0.3, myHeight * 0.88)
+    var window_4 = windows.createWindow('window_4',0, 0, myWidth * 0.3, myHeight * 0.88)
     window_4.setText('Import Document');
-    window_4.setModal(1);
-    window_4.button('park').hide();
-    window_4.button('minmax').hide();
+    window_4.center();
 
     var formData = [
+        {
+            type: "settings",
+            position: "label-left",
+            labelWidth: myWidth * 0.09,
+            inputWidth: myWidth * 0.18,
+            offsetLeft: myWidth * 0.003
+        },
         {
             type: "fieldset",
             label: "Enter document link and Authentication Key",
@@ -452,9 +457,7 @@ function authenticateWindow() {
     var windows = new dhtmlXWindows();
     var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.27, myHeight * 0.3)
     window_4.setText('Authenticate Documents');
-    window_4.setModal(1);
-    window_4.button('park').hide();
-    window_4.button('minmax').hide();
+    window_4.center();
 
     var formData = [
         {
@@ -507,11 +510,9 @@ function authenticateWindow() {
 }
 function openPrivateIpsWindow(ips) {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
+    var window_4 = windows.createWindow('window_4', 0, 0, myWidth * 0.3, myHeight * 0.56)
     window_4.setText('Private Ips');
-    window_4.setModal(1);
-    window_4.button('park').hide();
-    window_4.button('minmax').hide();
+    window_4.center();
 
 
     // window_4.close();
@@ -521,13 +522,18 @@ function openPrivateIpsWindow(ips) {
 }
 function openUploadFolderWindow(docname) {
     var windows = new dhtmlXWindows();
-    var window_4 = windows.createWindow('window_4', myWidth * 0.222, myHeight * 0.09, myWidth * 0.3, myHeight * 0.56)
+    var window_4 = windows.createWindow('window_4', 0, 0, myWidth * 0.3, myHeight * 0.56)
     window_4.setText('Import Document');
-    window_4.setModal(1);
-    window_4.button('park').hide();
-    window_4.button('minmax').hide();
+    window_4.center();
     var name = docname.replace(".htm", "_files");
     var formData = [
+        {
+            type: "settings",
+            position: "label-left",
+            labelWidth: myWidth * 0.09,
+            inputWidth: myWidth * 0.18,
+            offsetLeft: myWidth * 0.003
+        },
         {
             type: "label",
             label: "Select and upload all files used in the MS word files ie. files in  " + name + " Here!, if you did not use any file(images, shapes, etc  in the document, click Continue...",
@@ -890,12 +896,9 @@ function deleteCourseArchive(id) {
 function openCourseHistoryWindow(docid) {
 
     var windows = new dhtmlXWindows();
-    var window_6 = windows.createWindow('window_4', 400, 100, 1000, 600);
+    var window_6 = windows.createWindow('window_4', 0, 0, 1000, 600);
     window_6.setText('Course Versions History');
-    window_6.setModal(1);
-    //window_4.centerOnScreen();
-    window_6.button('park').hide();
-    window_6.button('minmax').hide();
+    window_4.center();
 
     var grid_H = window_6.attachGrid();
     grid_H.setImagePath('plugins/dhtmlxsuite5/skins/terrace/imgs/');
