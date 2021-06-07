@@ -1188,7 +1188,7 @@ function getHeadingsWithContents($bodyContent, $content)
                 if ($count < $size) {
                     $heading = strip_tags($obj->heading);
                     $heading = str_replace('&nbsp;', '', $heading);
-                    $heading = preg_replace('/\s+/', ' ', $heading);
+                    $heading = trim(preg_replace('/\s+/', '', $heading));
 
                     $contentPerChapter = $obj->content;
                     list($chapter_id, $chapter_name) = getHeadlineInformations($heading);
