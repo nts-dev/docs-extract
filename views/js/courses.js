@@ -248,7 +248,7 @@ function openUploadWindow(reimport, doc_id) {
         },
         {
             type: "fieldset",
-            label: "Drag And Drop Google Document zip file here",
+            label: "Drag And Drop Google Document zip/ms word file here",
             iconset: "awesome",
             width: myWidth * 0.27,
             list: [{

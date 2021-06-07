@@ -7,7 +7,7 @@ ini_set('max_execution_time', 0);
 include '../../config.php';
 include 'curl.php';
 require_once '../vendor/autoload.php';
-include "Files.php";
+//include "documents.php";
 define('IMPORTZIP', 1);
 define('IMPORTURL', 2);
 define('UPLOADFOLDER', 3);
@@ -49,6 +49,9 @@ $userCommands_1 = "<%,%>";
 $userCommands = "&lt;%,%&gt;";
 $delimiters[] = $links;
 $delimiters[] = $userCommands;
+$php_id = 0;
+$php_name ="";
+$php_action = 0;
 $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_NUMBER_INT);
 //$classObj = new Files(); '&lt;%') !== false && strpos($content, '%&gt;') !== false) {
 
@@ -82,7 +85,7 @@ switch ($action) {
                     }
                 }
 
-                $path_html = dirname(__FILE__) . '/';
+                $path_html = __DIR__ . '/';
                 $filenoext = basename($filename, '.zip');
                 $filenoext = basename($filenoext, '.ZIP');
                 $filenoext = basename($filenoext, '.doc');
@@ -107,7 +110,7 @@ switch ($action) {
                             readGoogleDocHtml($myDir, $filenoext, true);
 
                             if (file_exists($dir)) {
-                                xrmdir($dir);
+                                xrmdirs($dir);
                             }
                         } else {
                             $zip = new ZipArchive();
@@ -734,7 +737,7 @@ function makedir($docname, $fileType)
     $docFolder = $path . $docname . "/" . $fileType;
     if ($reimport) {
         if (file_exists($docFolder)) {
-            xrmdir($docFolder);
+            xrmdirs($docFolder);
         }
     }
     if (!file_exists($docFolder)) {
@@ -812,7 +815,7 @@ function downloadVideo($url, $mp4)
 
 }
 
-function xrmdir($dir)
+function xrmdirs($dir)
 {
     $items = scandir($dir);
     foreach ($items as $item) {
@@ -821,7 +824,7 @@ function xrmdir($dir)
         }
         $path = $dir . '/' . $item;
         if (is_dir($path)) {
-            xrmdir($path);
+            xrmdirs($path);
         } else {
             unlink($path);
         }
@@ -1275,11 +1278,8 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
         $section = explode(".", $chapter_nums);
         $section = $section[0];
         if ($section) {
-
             mysqli_query($dbc, 'SET @@global.max_allowed_packet = ' . 5000 * 1024 * 1024) or die(mysqli_error($dbc));
-
             if (strpos($key, '</h1>') !== false) {
-
 
                 $parent_id = 0;
                 $counter_l1++;
@@ -1335,6 +1335,24 @@ function tableOfContents($key, $chapter_id, $chapter_name, $contentPerChapter, $
 
         if ($qid)
             checkResponse($contentPerChapter, $qid, $qid1);
+
+    }
+    else if(!$chapter_num && strpos($chapter, 'Table of content') === false){
+        $response = [
+            'response' => false, 'text' => $chapter . " is missing chapter Id/Number kindly add chapter id/Number and try again!"
+        ];
+        $responses[] = $response;
+        echo json_encode($responses);
+
+        $obj = [
+            'id' => $id,
+            'doc_name' => $docName
+        ];
+        $curl = new curl;
+        $serverurl = "http://".$_SERVER["HTTP_HOST"]. parse_url($_SERVER['HTTP_REFERER'],PHP_URL_PATH) ."controller/documents.php?action=5";
+       $curl->get($serverurl, $obj);
+
+exit;
 
     }
 

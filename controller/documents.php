@@ -4,8 +4,7 @@ include_once '../../config.php';
 require_once 'curl.php';
 ini_set('display_errors', '0');
 
-$action = $_GET['action'];
-
+    $action = $_GET['action'];
 
 switch ($action) {
 
@@ -95,8 +94,10 @@ switch ($action) {
         break;
 
     case 5:
+
         $id = $_GET['id'];
         $name = $_GET['doc_name'];
+
         $documents_query = "SELECT document.doc_name,course_server.moodle_course_id,course_server.server_id,moodle_servers.name,document.local_course_id
               FROM document
               LEFT JOIN course_server ON document.id = course_server.document_id
@@ -110,7 +111,7 @@ switch ($action) {
 
 		if(!empty($remoteId))
 		deleteRemoteCourse($remoteId);
-		
+
         list($token, $domain) = getToken($id);
         $query_quiz = "Delete question, question_Page, choices
                     FROM document document
@@ -140,16 +141,16 @@ switch ($action) {
                     $path = $_SERVER["DOCUMENT_ROOT"] . "/CourseFiles/documentFiles/" . $name;
                     if (file_exists($path))
                         xrmdir($path);
-					
-					 
-					 
-                    $response = [
+
+					// if(!$php_id){
+					     $response = [
                         'response' => true,
                         'text' => 'Document Deleted!!',
                         'courseid' => $courseid,
                         'domain' => $domain
                     ];
                     echo json_encode($response);
+              //  }
                 }
             }
 
